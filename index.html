@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gallery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&family=Syne:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --border: #1e1e1e;
+    --text: #e8e6e0;
+    --muted: #5a5a5a;
+    --accent: #c8ff00;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 1.5rem 2.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(10,10,10,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .logo span { color: var(--accent); }
+
+  nav {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+  }
+
+  nav button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  nav button:hover, nav button.active {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+
+  nav button.active { color: var(--accent); }
+
+  main {
+    padding: 7rem 2.5rem 4rem;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  .hero-line {
+    font-size: clamp(3rem, 8vw, 7rem);
+    font-weight: 300;
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    margin-bottom: 4rem;
+    overflow: hidden;
+  }
+
+  .hero-line em {
+    font-style: normal;
+    color: var(--accent);
+  }
+
+  #count-bar {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+  }
+
+  /* Masonry grid */
+  #gallery {
+    columns: 4;
+    column-gap: 12px;
+  }
+
+  @media (max-width: 1200px) { #gallery { columns: 3; } }
+  @media (max-width: 800px) { #gallery { columns: 2; } }
+  @media (max-width: 500px) { #gallery { columns: 1; } }
+
+  .item {
+    break-inside: avoid;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  .item img, .item video {
+    width: 100%;
+    display: block;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .item:hover img, .item:hover video {
+    transform: scale(1.03);
+  }
+
+  .item .overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    display: flex;
+    align-items: flex-end;
+    padding: 1rem;
+  }
+
+  .item:hover .overlay { opacity: 1; }
+
+  .item .type-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid rgba(200,255,0,0.4);
+    color: var(--accent);
+  }
+
+  .gif-badge {
+    position: absolute;
+    top: 0.6rem; right: 0.6rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.4rem;
+    background: rgba(10,10,10,0.8);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+
+  /* Lightbox */
+  #lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0,0,0,0.95);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+
+  #lightbox.open { display: flex; }
+
+  #lightbox-media {
+    max-width: 90vw;
+    max-height: 85vh;
+    object-fit: contain;
+  }
+
+  #lightbox-close {
+    position: fixed;
+    top: 1.5rem; right: 2rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  #lightbox-close:hover { color: var(--accent); }
+
+  /* Empty state */
+  #empty {
+    display: none;
+    text-align: center;
+    padding: 6rem 2rem;
+  }
+
+  #empty.visible { display: block; }
+
+  #empty p {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    margin-top: 1rem;
+  }
+
+  #empty .big { font-size: 3rem; color: var(--border); }
+
+  footer {
+    text-align: center;
+    padding: 3rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-top: 1px solid var(--border);
+  }
+
+  .loading-spinner {
+    text-align: center;
+    padding: 4rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .error-msg {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: #ff6b6b;
+    text-align: center;
+    padding: 2rem;
+    letter-spacing: 0.06em;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">VOID<span>.</span>GALLERY</div>
+  <nav>
+    <button class="active" data-filter="all">All</button>
+    <button data-filter="image">Photos</button>
+    <button data-filter="gif">GIFs</button>
+    <button data-filter="video">Video</button>
+  </nav>
+</header>
+
+<main>
+  <div class="hero-line">Every<br>frame<br><em>matters.</em></div>
+
+  <div id="count-bar">Loading...</div>
+
+  <div id="loading" class="loading-spinner">Fetching media — —</div>
+
+  <div id="empty">
+    <div class="big">◻</div>
+    <p>No media found in this category.</p>
+  </div>
+
+  <div id="gallery"></div>
+
+  <div id="error" class="error-msg" style="display:none"></div>
+</main>
+
+<div id="lightbox">
+  <button id="lightbox-close">✕ close</button>
+  <img id="lightbox-img" class="lightbox-media" style="display:none; max-width:90vw; max-height:85vh; object-fit:contain;">
+  <video id="lightbox-vid" class="lightbox-media" controls style="display:none; max-width:90vw; max-height:85vh;">
+    <source id="lightbox-vid-src" src="" type="video/mp4">
+  </video>
+</div>
+
+<footer>void.gallery — all rights reserved</footer>
+
+<script>
+// ============================================================
+// CONFIG — paste your Cloudinary cloud name here
+// ============================================================
+const CLOUD_NAME = 'dflgldw4j';
+const FOLDER = 'gallery'; // folder name in Cloudinary
+// ============================================================
+
+let allItems = [];
+let activeFilter = 'all';
+
+async function fetchMedia() {
+  try {
+    // Use Cloudinary's search API via a JSONP-style fetch
+    // We'll load from a manifest JSON file that admin generates
+    const resp = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/${FOLDER}/manifest.json?t=${Date.now()}`);
+    if (!resp.ok) throw new Error('Manifest not found');
+    const data = await resp.json();
+    allItems = data.items || [];
+    render();
+  } catch(e) {
+    // Fallback: try Cloudinary search API (requires unsigned preset)
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error').style.display = 'block';
+    document.getElementById('error').textContent = 'Could not load media. Make sure CLOUD_NAME is set and manifest.json exists.';
+    console.error(e);
+  }
+}
+
+function getType(item) {
+  if (item.type) return item.type;
+  const url = item.url || '';
+  if (url.match(/\.gif$/i)) return 'gif';
+  if (url.match(/\.(mp4|webm|mov)$/i)) return 'video';
+  return 'image';
+}
+
+function render() {
+  document.getElementById('loading').style.display = 'none';
+  const gallery = document.getElementById('gallery');
+  const empty = document.getElementById('empty');
+
+  const filtered = activeFilter === 'all'
+    ? allItems
+    : allItems.filter(i => getType(i) === activeFilter);
+
+  document.getElementById('count-bar').textContent =
+    `${filtered.length} ${filtered.length === 1 ? 'item' : 'items'} — ${activeFilter}`;
+
+  if (filtered.length === 0) {
+    gallery.innerHTML = '';
+    empty.classList.add('visible');
+    return;
+  }
+
+  empty.classList.remove('visible');
+  gallery.innerHTML = '';
+
+  filtered.forEach(item => {
+    const type = getType(item);
+    const div = document.createElement('div');
+    div.className = 'item';
+    div.setAttribute('data-url', item.url);
+    div.setAttribute('data-type', type);
+
+    let mediaEl = '';
+    if (type === 'video') {
+      mediaEl = `<video src="${item.url}" muted loop autoplay playsinline></video>`;
+    } else {
+      mediaEl = `<img src="${item.url}" alt="${item.title || ''}" loading="lazy">`;
+    }
+
+    const badge = type === 'gif' ? `<div class="gif-badge">GIF</div>` : '';
+
+    div.innerHTML = `
+      ${mediaEl}
+      ${badge}
+      <div class="overlay">
+        <span class="type-badge">${type}</span>
+      </div>
+    `;
+
+    div.addEventListener('click', () => openLightbox(item.url, type));
+    gallery.appendChild(div);
+  });
+}
+
+function openLightbox(url, type) {
+  const lb = document.getElementById('lightbox');
+  const img = document.getElementById('lightbox-img');
+  const vid = document.getElementById('lightbox-vid');
+  const vsrc = document.getElementById('lightbox-vid-src');
+
+  img.style.display = 'none';
+  vid.style.display = 'none';
+
+  if (type === 'video') {
+    vsrc.src = url;
+    vid.load();
+    vid.style.display = 'block';
+  } else {
+    img.src = url;
+    img.style.display = 'block';
+  }
+
+  lb.classList.add('open');
+}
+
+document.getElementById('lightbox-close').addEventListener('click', () => {
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lightbox-vid').pause();
+});
+
+document.getElementById('lightbox').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('lightbox')) {
+    document.getElementById('lightbox').classList.remove('open');
+    document.getElementById('lightbox-vid').pause();
+  }
+});
+
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.filter;
+    render();
+  });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('lightbox').classList.remove('open');
+    document.getElementById('lightbox-vid').pause();
+  }
+});
+
+fetchMedia();
+</script>
+</body>
+</html>
