@@ -547,11 +547,15 @@
 // ============================================================
 // ⚙  CONFIGURATION — Edit these before deploying
 // ============================================================
-const ADMIN_PASSWORD   = 'yumiliyaporn1';      // ← your admin password
+const ADMIN_PASSWORD   = 'changeme123';      // ← your admin password
 const CLOUD_NAME       = 'dflgldw4j';  // ← from cloudinary.com dashboard
 const UPLOAD_PRESET    = 'gallery_unsigned'; // ← create unsigned preset in Cloudinary
 const FOLDER           = 'gallery';          // ← Cloudinary folder name
 // ============================================================
+
+// Manifest is stored in localStorage (persists in your browser)
+// and synced to Cloudinary as a raw file for the public gallery
+const MANIFEST_KEY = 'gallery_manifest_v1';
 
 const SESSION_KEY = 'gallery_admin_auth';
 
@@ -580,6 +584,7 @@ function showPanel() {
   if (CLOUD_NAME === 'YOUR_CLOUD_NAME') {
     document.getElementById('config-banner').style.display = 'block';
   }
+  loadManifestLocal();
   loadLibrary();
 }
 
@@ -739,22 +744,24 @@ async function uploadFile(item) {
   }
 }
 
-// ── Manifest (stored in Cloudinary as raw file) ────────────
+// ── Manifest (localStorage + Cloudinary raw) ───────────────
 let manifest = { items: [] };
 
-async function loadManifest() {
+function loadManifestLocal() {
   try {
-    const r = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/${FOLDER}/manifest.json?t=${Date.now()}`);
-    if (r.ok) {
-      manifest = await r.json();
-    }
+    const saved = localStorage.getItem(MANIFEST_KEY);
+    if (saved) manifest = JSON.parse(saved);
   } catch(e) {
     manifest = { items: [] };
   }
 }
 
+function saveManifestLocal() {
+  localStorage.setItem(MANIFEST_KEY, JSON.stringify(manifest));
+}
+
 async function updateManifest() {
-  // Add newly uploaded files to manifest
+  // Add newly uploaded files
   const newItems = fileQueue
     .filter(f => f.status === 'done' && f.url)
     .map(f => ({
@@ -766,24 +773,28 @@ async function updateManifest() {
 
   manifest.items = [...manifest.items, ...newItems];
 
-  // Upload manifest as raw file
-  const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
-  const formData = new FormData();
-  formData.append('file', blob, 'manifest.json');
-  formData.append('upload_preset', UPLOAD_PRESET);
-  formData.append('folder', FOLDER);
-  formData.append('public_id', `${FOLDER}/manifest`);
-  formData.append('resource_type', 'raw');
-  formData.append('overwrite', 'true');
+  // Save locally first (always works)
+  saveManifestLocal();
 
+  // Also push to Cloudinary so the public gallery can read it
   try {
-    await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/raw/upload`, {
+    const jsonStr = JSON.stringify(manifest);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const formData = new FormData();
+    formData.append('file', blob, 'manifest.json');
+    formData.append('upload_preset', UPLOAD_PRESET);
+    formData.append('public_id', `${FOLDER}/manifest`);
+
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/raw/upload`, {
       method: 'POST',
       body: formData
     });
+
+    if (!res.ok) throw new Error(await res.text());
   } catch(e) {
-    console.error('Manifest update failed', e);
-    toast('Warning: manifest update failed', 'error');
+    console.error('Cloudinary manifest sync failed:', e);
+    toast('Uploaded! (Note: public gallery sync may need a retry)', 'success');
+    return;
   }
 }
 
@@ -792,7 +803,7 @@ async function loadLibrary() {
   document.getElementById('lib-loading').style.display = 'block';
   document.getElementById('library-grid').innerHTML = '';
 
-  await loadManifest();
+  loadManifestLocal();
 
   document.getElementById('lib-loading').style.display = 'none';
   const items = manifest.items || [];
@@ -844,27 +855,25 @@ async function loadLibrary() {
 async function deleteItem(idx) {
   if (!confirm('Remove this item from the gallery?')) return;
   manifest.items.splice(idx, 1);
+  saveManifestLocal();
 
-  // Re-upload manifest
-  const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
-  const formData = new FormData();
-  formData.append('file', blob, 'manifest.json');
-  formData.append('upload_preset', UPLOAD_PRESET);
-  formData.append('folder', FOLDER);
-  formData.append('public_id', `${FOLDER}/manifest`);
-  formData.append('resource_type', 'raw');
-  formData.append('overwrite', 'true');
-
+  // Re-push manifest to Cloudinary
   try {
+    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+    const formData = new FormData();
+    formData.append('file', blob, 'manifest.json');
+    formData.append('upload_preset', UPLOAD_PRESET);
+    formData.append('public_id', `${FOLDER}/manifest`);
+
     await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/raw/upload`, {
       method: 'POST',
       body: formData
     });
     toast('Item removed from gallery', 'success');
-    loadLibrary();
   } catch(e) {
-    toast('Error updating gallery', 'error');
+    toast('Removed locally. Sync to public gallery may need retry.', 'success');
   }
+  loadLibrary();
 }
 </script>
 </body>
