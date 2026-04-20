@@ -548,7 +548,7 @@
 // ⚙  CONFIGURATION — Edit these before deploying
 // ============================================================
 const ADMIN_PASSWORD   = 'changeme123';      // ← your admin password
-const CLOUD_NAME       = 'dflgldw4j';  // ← from cloudinary.com dashboard
+const CLOUD_NAME       = 'YOUR_CLOUD_NAME';  // ← from cloudinary.com dashboard
 const UPLOAD_PRESET    = 'gallery_unsigned'; // ← create unsigned preset in Cloudinary
 const FOLDER           = 'gallery';          // ← Cloudinary folder name
 // ============================================================
@@ -558,6 +558,20 @@ const FOLDER           = 'gallery';          // ← Cloudinary folder name
 const MANIFEST_KEY = 'gallery_manifest_v1';
 
 const SESSION_KEY = 'gallery_admin_auth';
+
+// ── Manifest state ─────────────────────────────────────────
+let manifest = { items: [] };
+
+function loadManifestLocal() {
+  try {
+    const saved = localStorage.getItem(MANIFEST_KEY);
+    if (saved) manifest = JSON.parse(saved);
+  } catch(e) { manifest = { items: [] }; }
+}
+
+function saveManifestLocal() {
+  localStorage.setItem(MANIFEST_KEY, JSON.stringify(manifest));
+}
 
 // ── Auth ──────────────────────────────────────────────────
 function checkAuth() {
@@ -744,22 +758,7 @@ async function uploadFile(item) {
   }
 }
 
-// ── Manifest (localStorage + Cloudinary raw) ───────────────
-let manifest = { items: [] };
-
-function loadManifestLocal() {
-  try {
-    const saved = localStorage.getItem(MANIFEST_KEY);
-    if (saved) manifest = JSON.parse(saved);
-  } catch(e) {
-    manifest = { items: [] };
-  }
-}
-
-function saveManifestLocal() {
-  localStorage.setItem(MANIFEST_KEY, JSON.stringify(manifest));
-}
-
+// ── Manifest sync to Cloudinary ────────────────────────────
 async function updateManifest() {
   // Add newly uploaded files
   const newItems = fileQueue
