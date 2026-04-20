@@ -308,11 +308,12 @@ let activeFilter = 'all';
 
 async function fetchMedia() {
   try {
-    // Use Cloudinary's search API via a JSONP-style fetch
-    // We'll load from a manifest JSON file that admin generates
-    const resp = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/${FOLDER}/manifest.json?t=${Date.now()}`);
-    if (!resp.ok) throw new Error('Manifest not found');
+    const url = `https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/${FOLDER}/manifest.json?t=${Date.now()}`;
+    console.log('Fetching manifest from:', url);
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Manifest not found: ' + resp.status);
     const data = await resp.json();
+    console.log('Manifest loaded:', data);
     allItems = data.items || [];
     render();
   } catch(e) {

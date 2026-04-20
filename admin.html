@@ -695,10 +695,12 @@ uploadBtn.addEventListener('click', async () => {
     await uploadFile(item);
   }
 
+  const uploaded = fileQueue.filter(f => f.status === 'done' && f.url);
+  await updateManifest(uploaded);
+
+  fileQueue = fileQueue.filter(f => f.status !== 'done');
   uploadBtn.disabled = false;
   uploadBtn.textContent = 'Upload all';
-  fileQueue = fileQueue.filter(f => f.status !== 'done');
-  await updateManifest();
   await loadLibrary();
   toast('Upload complete!', 'success');
 });
@@ -759,23 +761,19 @@ async function uploadFile(item) {
 }
 
 // ── Manifest sync to Cloudinary ────────────────────────────
-async function updateManifest() {
-  // Add newly uploaded files
-  const newItems = fileQueue
-    .filter(f => f.status === 'done' && f.url)
-    .map(f => ({
-      url: f.url,
-      type: getFileType(f.file),
-      name: f.file.name,
-      uploadedAt: new Date().toISOString()
-    }));
+async function updateManifest(uploadedItems) {
+  const newItems = uploadedItems.map(f => ({
+    url: f.url,
+    type: getFileType(f.file),
+    name: f.file.name,
+    uploadedAt: new Date().toISOString()
+  }));
 
   manifest.items = [...manifest.items, ...newItems];
-
-  // Save locally first (always works)
   saveManifestLocal();
 
-  // Also push to Cloudinary so the public gallery can read it
+  console.log('Saving manifest with', manifest.items.length, 'items:', JSON.stringify(manifest));
+
   try {
     const jsonStr = JSON.stringify(manifest);
     const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -789,11 +787,13 @@ async function updateManifest() {
       body: formData
     });
 
-    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    console.log('Manifest upload response:', data);
+
+    if (!res.ok) throw new Error(JSON.stringify(data));
   } catch(e) {
     console.error('Cloudinary manifest sync failed:', e);
-    toast('Uploaded! (Note: public gallery sync may need a retry)', 'success');
-    return;
+    toast('Uploaded locally but public sync failed — check console', 'error');
   }
 }
 
