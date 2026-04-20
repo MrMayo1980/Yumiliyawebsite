@@ -303,25 +303,59 @@ const CLOUD_NAME = 'dflgldw4j';
 const FOLDER = 'gallery'; // folder name in Cloudinary
 // ============================================================
 
+const MANIFEST_KEY = 'gallery_manifest_v1';
+
 let allItems = [];
 let activeFilter = 'all';
 
 async function fetchMedia() {
+  // Try fetching all versioned manifests from Cloudinary
+  // Admin stores manifest as manifest_001.json, manifest_002.json etc.
+  // We fetch the highest version we can find
+  document.getElementById('loading').style.display = 'block';
+
+  // First try localStorage cache
   try {
-    const url = `https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/${FOLDER}/manifest.json?t=${Date.now()}`;
-    console.log('Fetching manifest from:', url);
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error('Manifest not found: ' + resp.status);
-    const data = await resp.json();
-    console.log('Manifest loaded:', data);
-    allItems = data.items || [];
-    render();
-  } catch(e) {
-    // Fallback: try Cloudinary search API (requires unsigned preset)
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('error').style.display = 'block';
-    document.getElementById('error').textContent = 'Could not load media. Make sure CLOUD_NAME is set and manifest.json exists.';
-    console.error(e);
+    const cached = localStorage.getItem(MANIFEST_KEY);
+    if (cached) {
+      const data = JSON.parse(cached);
+      allItems = data.items || [];
+      if (allItems.length > 0) {
+        render();
+        // Still try to refresh in background
+        fetchFromCloudinary();
+        return;
+      }
+    }
+  } catch(e) {}
+
+  await fetchFromCloudinary();
+}
+
+async function fetchFromCloudinary() {
+  // Try manifest versions from high to low until we find one
+  for (let v = 99; v >= 0; v--) {
+    const vStr = String(v).padStart(3, '0');
+    const url = `https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/${FOLDER}/manifest_${vStr}.json?t=${Date.now()}`;
+    try {
+      const resp = await fetch(url);
+      if (resp.ok) {
+        const data = await resp.json();
+        const items = data.items || [];
+        if (items.length > 0) {
+          allItems = items;
+          localStorage.setItem(MANIFEST_KEY, JSON.stringify(data));
+          render();
+          return;
+        }
+      }
+    } catch(e) {}
+  }
+  // Nothing found
+  document.getElementById('loading').style.display = 'none';
+  if (allItems.length === 0) {
+    document.getElementById('empty').classList.add('visible');
+    document.getElementById('count-bar').textContent = '0 items';
   }
 }
 

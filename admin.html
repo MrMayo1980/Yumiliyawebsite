@@ -772,15 +772,23 @@ async function updateManifest(uploadedItems) {
   manifest.items = [...manifest.items, ...newItems];
   saveManifestLocal();
 
-  console.log('Saving manifest with', manifest.items.length, 'items:', JSON.stringify(manifest));
+  // Use a versioned filename — increment each time so no overwrite needed
+  const version = manifest.version || 0;
+  manifest.version = version + 1;
+  saveManifestLocal();
+
+  const vStr = String(manifest.version).padStart(3, '0');
+  const filename = `manifest_${vStr}.json`;
+
+  console.log('Saving manifest version', vStr, 'with', manifest.items.length, 'items');
 
   try {
     const jsonStr = JSON.stringify(manifest);
     const blob = new Blob([jsonStr], { type: 'application/json' });
     const formData = new FormData();
-    formData.append('file', blob, 'manifest.json');
+    formData.append('file', blob, filename);
     formData.append('upload_preset', UPLOAD_PRESET);
-    formData.append('public_id', `${FOLDER}/manifest`);
+    formData.append('public_id', `${FOLDER}/manifest_${vStr}`);
 
     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/raw/upload`, {
       method: 'POST',
@@ -791,9 +799,10 @@ async function updateManifest(uploadedItems) {
     console.log('Manifest upload response:', data);
 
     if (!res.ok) throw new Error(JSON.stringify(data));
+    toast('Upload complete!', 'success');
   } catch(e) {
-    console.error('Cloudinary manifest sync failed:', e);
-    toast('Uploaded locally but public sync failed — check console', 'error');
+    console.error('Manifest sync failed:', e);
+    toast('Saved locally — public sync failed', 'error');
   }
 }
 
@@ -854,23 +863,22 @@ async function loadLibrary() {
 async function deleteItem(idx) {
   if (!confirm('Remove this item from the gallery?')) return;
   manifest.items.splice(idx, 1);
+  manifest.version = (manifest.version || 0) + 1;
   saveManifestLocal();
 
-  // Re-push manifest to Cloudinary
+  const vStr = String(manifest.version).padStart(3, '0');
   try {
     const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
     const formData = new FormData();
-    formData.append('file', blob, 'manifest.json');
+    formData.append('file', blob, `manifest_${vStr}.json`);
     formData.append('upload_preset', UPLOAD_PRESET);
-    formData.append('public_id', `${FOLDER}/manifest`);
-
+    formData.append('public_id', `${FOLDER}/manifest_${vStr}`);
     await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/raw/upload`, {
-      method: 'POST',
-      body: formData
+      method: 'POST', body: formData
     });
     toast('Item removed from gallery', 'success');
   } catch(e) {
-    toast('Removed locally. Sync to public gallery may need retry.', 'success');
+    toast('Removed locally. Public sync failed.', 'error');
   }
   loadLibrary();
 }
