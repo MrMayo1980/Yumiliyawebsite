@@ -662,7 +662,7 @@ function getFileType(file) {
 
 function addFiles(files) {
   files.forEach(file => {
-    const id = Date.now() + Math.random();
+    const id = Date.now() + '_' + Math.floor(Math.random() * 10000);
     fileQueue.push({ id, file, status: 'pending' });
     renderQueueItem(id, file);
   });
