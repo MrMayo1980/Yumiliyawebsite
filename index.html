@@ -127,9 +127,9 @@ document.addEventListener('dragstart', e => e.preventDefault());
 async function fetchMedia() {
   document.getElementById('loading').style.display = 'block';
   const seenUrls = new Set();
+  const deletedUrls = new Set();
   const merged = [];
   let misses = 0;
-  // Scan upward from 1, stop after 3 consecutive misses — fast and complete
   for (let v = 1; v <= 999; v++) {
     const vStr = String(v).padStart(3, '0');
     try {
@@ -137,6 +137,7 @@ async function fetchMedia() {
       if (resp.ok) {
         misses = 0;
         const data = await resp.json();
+        for (const url of (data.deleted||[])) deletedUrls.add(url);
         for (const item of (data.items || [])) {
           if (!seenUrls.has(item.url)) { seenUrls.add(item.url); merged.push(item); }
         }
@@ -147,8 +148,9 @@ async function fetchMedia() {
     } catch(e) { misses++; if (misses >= 3) break; }
   }
   document.getElementById('loading').style.display = 'none';
-  if (merged.length === 0) { document.getElementById('empty').classList.add('visible'); return; }
-  allItems = merged;
+  const finalItems = merged.filter(i => !deletedUrls.has(i.url));
+  if (finalItems.length === 0) { document.getElementById('empty').classList.add('visible'); return; }
+  allItems = finalItems;
   render();
 }
 

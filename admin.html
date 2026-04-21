@@ -376,7 +376,7 @@ header{
 
 <script>
 // ============================================================
-const ADMIN_PASSWORD = 'changeme123';
+const ADMIN_PASSWORD = 'yumiliyaporn1';
 const CLOUD_NAME     = 'dflgldw4j';
 const UPLOAD_PRESET  = 'gallery_unsigned';
 const FOLDER         = 'gallery';
@@ -510,7 +510,9 @@ async function uploadFile(item) {
 // ── Manifest — always fetch latest from Cloudinary first ──
 async function fetchLatestManifest() {
   // Scan upward, stop after 3 consecutive misses
+  // Collect all items AND all deleted URLs across all manifests
   const seenUrls = new Set();
+  const deletedUrls = new Set();
   const merged = [];
   let maxVersion = 0;
   let misses = 0;
@@ -522,13 +524,17 @@ async function fetchLatestManifest() {
         misses = 0;
         const data = await resp.json();
         if ((data.version||0) > maxVersion) maxVersion = (data.version||v);
+        // Collect deleted URLs from this manifest
+        for (const url of (data.deleted||[])) deletedUrls.add(url);
         for (const item of (data.items||[])) {
           if (!seenUrls.has(item.url)) { seenUrls.add(item.url); merged.push(item); }
         }
       } else { misses++; if (misses>=3) break; }
     } catch(e) { misses++; if (misses>=3) break; }
   }
-  return { items: merged, version: maxVersion };
+  // Filter out any deleted items
+  const finalItems = merged.filter(i => !deletedUrls.has(i.url));
+  return { items: finalItems, version: maxVersion, deleted: [...deletedUrls] };
 }
 
 async function updateManifest(uploadedItems) {
@@ -609,10 +615,20 @@ async function loadLibrary() {
 async function deleteItem(idx, manifest) {
   if (!confirm('Удалить этот файл из галереи?')) return;
 
-  // Fetch fresh manifest first to avoid conflicts
+  const itemToDelete = manifest.items[idx];
+  if (!itemToDelete) return;
+
+  // Fetch fresh state
   const current = await fetchLatestManifest();
-  current.items.splice(idx,1);
-  current.version = (current.version||0)+1;
+  current.version = (current.version||0) + 1;
+
+  // Add to deleted blocklist
+  const deletedSet = new Set(current.deleted||[]);
+  deletedSet.add(itemToDelete.url);
+  current.deleted = [...deletedSet];
+
+  // Remove from items too
+  current.items = current.items.filter(i => i.url !== itemToDelete.url);
 
   const vStr = String(current.version).padStart(3,'0');
   try {
