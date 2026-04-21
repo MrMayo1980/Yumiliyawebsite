@@ -376,7 +376,7 @@ header{
 
 <script>
 // ============================================================
-const ADMIN_PASSWORD = 'yumiliyaporn1';
+const ADMIN_PASSWORD = 'changeme123';
 const CLOUD_NAME     = 'dflgldw4j';
 const UPLOAD_PRESET  = 'gallery_unsigned';
 const FOLDER         = 'gallery';
@@ -509,22 +509,24 @@ async function uploadFile(item) {
 
 // ── Manifest — always fetch latest from Cloudinary first ──
 async function fetchLatestManifest() {
-  // Merge ALL manifest versions to avoid missing items from concurrent uploads
+  // Scan upward, stop after 3 consecutive misses
   const seenUrls = new Set();
   const merged = [];
   let maxVersion = 0;
-  for (let v=99; v>=0; v--) {
+  let misses = 0;
+  for (let v=1; v<=999; v++) {
     const vStr = String(v).padStart(3,'0');
     try {
       const resp = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/${FOLDER}/manifest_${vStr}.json?t=${Date.now()}`);
       if (resp.ok) {
+        misses = 0;
         const data = await resp.json();
-        if ((data.version||0) > maxVersion) maxVersion = (data.version||0);
+        if ((data.version||0) > maxVersion) maxVersion = (data.version||v);
         for (const item of (data.items||[])) {
           if (!seenUrls.has(item.url)) { seenUrls.add(item.url); merged.push(item); }
         }
-      }
-    } catch(e) {}
+      } else { misses++; if (misses>=3) break; }
+    } catch(e) { misses++; if (misses>=3) break; }
   }
   return { items: merged, version: maxVersion };
 }

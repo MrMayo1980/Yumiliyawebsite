@@ -126,25 +126,28 @@ document.addEventListener('dragstart', e => e.preventDefault());
 
 async function fetchMedia() {
   document.getElementById('loading').style.display = 'block';
-  // Fetch ALL manifests and merge by URL to handle concurrent uploads
   const seenUrls = new Set();
   const merged = [];
-  let foundAny = false;
-  for (let v = 99; v >= 0; v--) {
+  let misses = 0;
+  // Scan upward from 1, stop after 3 consecutive misses — fast and complete
+  for (let v = 1; v <= 999; v++) {
     const vStr = String(v).padStart(3, '0');
     try {
       const resp = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/${FOLDER}/manifest_${vStr}.json?t=${Date.now()}`);
       if (resp.ok) {
-        foundAny = true;
+        misses = 0;
         const data = await resp.json();
         for (const item of (data.items || [])) {
           if (!seenUrls.has(item.url)) { seenUrls.add(item.url); merged.push(item); }
         }
+      } else {
+        misses++;
+        if (misses >= 3) break;
       }
-    } catch(e) {}
+    } catch(e) { misses++; if (misses >= 3) break; }
   }
   document.getElementById('loading').style.display = 'none';
-  if (!foundAny || merged.length === 0) { document.getElementById('empty').classList.add('visible'); return; }
+  if (merged.length === 0) { document.getElementById('empty').classList.add('visible'); return; }
   allItems = merged;
   render();
 }
