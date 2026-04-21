@@ -509,17 +509,24 @@ async function uploadFile(item) {
 
 // ── Manifest — always fetch latest from Cloudinary first ──
 async function fetchLatestManifest() {
+  // Merge ALL manifest versions to avoid missing items from concurrent uploads
+  const seenUrls = new Set();
+  const merged = [];
+  let maxVersion = 0;
   for (let v=99; v>=0; v--) {
     const vStr = String(v).padStart(3,'0');
     try {
       const resp = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/${FOLDER}/manifest_${vStr}.json?t=${Date.now()}`);
       if (resp.ok) {
         const data = await resp.json();
-        if (data.items) return data; // found it
+        if ((data.version||0) > maxVersion) maxVersion = (data.version||0);
+        for (const item of (data.items||[])) {
+          if (!seenUrls.has(item.url)) { seenUrls.add(item.url); merged.push(item); }
+        }
       }
     } catch(e) {}
   }
-  return { items:[], version:0 };
+  return { items: merged, version: maxVersion };
 }
 
 async function updateManifest(uploadedItems) {
