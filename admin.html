@@ -3,580 +3,275 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Админ — Юмилия</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
+<title>Юмилия — Админ</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg: #0d0b14;
-    --surface: #1a1625;
-    --surface2: #201a30;
-    --border: #2a2040;
-    --border2: #3a3055;
-    --text: #e8d8e8;
-    --muted: #7a6a8a;
-    --pink: #e05fa0;
-    --pink-light: #f080b8;
-    --pink-dim: rgba(224,95,160,0.12);
-    --pink-glow: rgba(224,95,160,0.3);
-    --danger: #e05050;
-    --success: #50d0a0;
-  }
-
-  * { -webkit-user-select:none; -moz-user-select:none; user-select:none; -webkit-touch-callout:none; }
-  input, textarea { -webkit-user-select:text; user-select:text; }
-
-  body {
-    background: var(--bg);
-    background-image:
-      radial-gradient(ellipse at 20% 0%, rgba(80,40,120,0.3) 0%, transparent 55%),
-      radial-gradient(ellipse at 80% 100%, rgba(120,30,80,0.2) 0%, transparent 55%);
-    color: var(--text);
-    font-family: 'Montserrat', sans-serif;
-    min-height: 100vh;
-  }
-
-  /* ── LOGIN ── */
-  #login-screen {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 2rem;
-    padding: 2rem;
-  }
-
-  .login-brand {
-    text-align: center;
-  }
-
-  .login-brand h1 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(2.5rem, 10vw, 4.5rem);
-    font-weight: 300;
-    color: var(--pink-light);
-    letter-spacing: 0.22em;
-    text-shadow: 0 0 40px rgba(224,95,160,0.25);
-    margin-bottom: 0.4rem;
-  }
-
-  .login-brand .sub {
-    font-size: 0.6rem;
-    letter-spacing: 0.28em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .login-box {
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    border-radius: 16px;
-    padding: 2.5rem;
-    width: 100%;
-    max-width: 360px;
-  }
-
-  .login-box h2 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.6rem;
-    font-weight: 300;
-    color: var(--text);
-    margin-bottom: 1.8rem;
-    letter-spacing: 0.06em;
-  }
-
-  .field { margin-bottom: 1.2rem; }
-
-  .field label {
-    display: block;
-    font-size: 0.6rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 0.5rem;
-  }
-
-  .field input[type="password"] {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    color: var(--text);
-    font-family: 'Montserrat', sans-serif;
-    font-size: 0.9rem;
-    padding: 0.75rem 1rem;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    -webkit-user-select: text;
-    user-select: text;
-  }
-
-  .field input[type="password"]:focus {
-    border-color: var(--pink);
-    box-shadow: 0 0 0 3px var(--pink-dim);
-  }
-
-  .btn-pink {
-    width: 100%;
-    background: var(--pink);
-    color: #fff;
-    border: none;
-    border-radius: 50px;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 0.72rem;
-    font-weight: 400;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    padding: 0.9rem;
-    cursor: pointer;
-    transition: opacity 0.2s, box-shadow 0.2s;
-    box-shadow: 0 0 20px var(--pink-glow);
-    margin-top: 0.5rem;
-  }
-
-  .btn-pink:hover { opacity: 0.85; }
-  .btn-pink:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
-
-  #login-error {
-    font-size: 0.65rem;
-    letter-spacing: 0.1em;
-    color: var(--danger);
-    margin-top: 0.8rem;
-    display: none;
-    text-align: center;
-  }
-
-  /* ── ADMIN PANEL ── */
-  #admin-panel { display: none; }
-
-  header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    padding: 1.2rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: rgba(13,11,20,0.92);
-    backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .logo {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.4rem;
-    font-weight: 300;
-    color: var(--pink-light);
-    letter-spacing: 0.15em;
-  }
-
-  .logo .admin-tag {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 0.55rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-left: 0.5rem;
-    vertical-align: middle;
-  }
-
-  #logout-btn {
-    background: none;
-    border: 1px solid var(--border2);
-    border-radius: 50px;
-    color: var(--muted);
-    font-family: 'Montserrat', sans-serif;
-    font-size: 0.6rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    padding: 0.4rem 1rem;
-    cursor: pointer;
-    transition: color 0.2s, border-color 0.2s;
-  }
-
-  #logout-btn:hover { color: var(--danger); border-color: var(--danger); }
-
-  /* ── PAGE TITLE ── */
-  .page-hero {
-    text-align: center;
-    padding: 2.5rem 1.5rem 2rem;
-  }
-
-  .page-hero .title-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1.2rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .page-hero .tline {
-    flex: 1;
-    max-width: 80px;
-    height: 1px;
-    background: linear-gradient(to right, transparent, var(--pink));
-    opacity: 0.4;
-  }
-  .page-hero .tline.r { background: linear-gradient(to left, transparent, var(--pink)); }
-
-  .page-hero h2 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(2rem, 8vw, 3.5rem);
-    font-weight: 300;
-    color: var(--pink-light);
-    letter-spacing: 0.22em;
-    text-shadow: 0 0 30px rgba(224,95,160,0.2);
-  }
-
-  .page-hero .sub {
-    font-size: 0.6rem;
-    letter-spacing: 0.28em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .plus-icon {
-    font-size: 1.2rem;
-    color: var(--pink);
-    opacity: 0.6;
-    margin: 1rem 0;
-  }
-
-  /* ── UPLOAD ZONES ── */
-  .upload-section {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 0 1.5rem 2rem;
-  }
-
-  .upload-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-
-  @media (max-width: 700px) {
-    .upload-grid { grid-template-columns: 1fr; }
-  }
-
-  .upload-card {
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    border-radius: 14px;
-    padding: 1.2rem;
-  }
-
-  .upload-card-title {
-    font-size: 0.62rem;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--pink-light);
-    margin-bottom: 0.3rem;
-  }
-
-  .upload-card-formats {
-    font-size: 0.55rem;
-    letter-spacing: 0.12em;
-    color: var(--muted);
-    margin-bottom: 0.9rem;
-  }
-
-  .drop-zone {
-    border: 1px dashed var(--border2);
-    border-radius: 10px;
-    padding: 2rem 1rem;
-    text-align: center;
-    cursor: pointer;
-    position: relative;
-    transition: border-color 0.2s, background 0.2s;
-    background: var(--surface2);
-  }
-
-  .drop-zone:hover, .drop-zone.drag-over {
-    border-color: var(--pink);
-    background: var(--pink-dim);
-  }
-
-  .drop-zone input[type="file"] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    width: 100%;
-    height: 100%;
-  }
-
-  .drop-zone .flower { font-size: 1.6rem; display: block; margin-bottom: 0.5rem; }
-  .drop-zone p {
-    font-size: 0.62rem;
-    letter-spacing: 0.1em;
-    color: var(--muted);
-  }
-
-  /* ── UPLOAD QUEUE ── */
-  #upload-queue {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-    margin-bottom: 1.2rem;
-  }
-
-  .queue-item {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 0.65rem 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-  }
-
-  .queue-item .file-type {
-    font-size: 0.58rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--pink-light);
-    border: 1px solid rgba(224,95,160,0.3);
-    border-radius: 20px;
-    padding: 0.12rem 0.4rem;
-    white-space: nowrap;
-  }
-
-  .queue-item .file-name {
-    flex: 1;
-    font-size: 0.7rem;
-    color: var(--text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .queue-item .file-status {
-    font-size: 0.62rem;
-    color: var(--muted);
-    white-space: nowrap;
-  }
-
-  .queue-item.uploading .file-status { color: var(--pink-light); }
-  .queue-item.done .file-status { color: var(--success); }
-  .queue-item.error .file-status { color: var(--danger); }
-
-  .progress-bar { height: 2px; background: var(--border); border-radius: 2px; margin-top: 0.4rem; overflow: hidden; }
-  .progress-fill { height: 100%; background: var(--pink); width: 0%; transition: width 0.2s; border-radius: 2px; }
-
-  #upload-btn {
-    display: none;
-    width: 100%;
-    background: var(--pink);
-    color: #fff;
-    border: none;
-    border-radius: 50px;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 0.72rem;
-    font-weight: 400;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    padding: 0.9rem;
-    cursor: pointer;
-    transition: opacity 0.2s, box-shadow 0.2s;
-    box-shadow: 0 0 20px var(--pink-glow);
-  }
-
-  #upload-btn:hover { opacity: 0.85; }
-  #upload-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
-
-  /* ── LIBRARY ── */
-  .section-label {
-    font-size: 0.6rem;
-    letter-spacing: 0.28em;
-    text-transform: uppercase;
-    color: var(--muted);
-    text-align: center;
-    padding: 0.5rem 0 1.2rem;
-    position: relative;
-  }
-
-  .section-label::before, .section-label::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    width: 30%;
-    height: 1px;
-    background: var(--border);
-    transform: translateY(-50%);
-  }
-  .section-label::before { left: 0; }
-  .section-label::after { right: 0; }
-
-  .stats-row {
-    display: flex;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .stat {
-    flex: 1;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 0.9rem 0.75rem;
-    text-align: center;
-  }
-
-  .stat-num {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 2rem;
-    font-weight: 300;
-    color: var(--pink-light);
-    line-height: 1;
-  }
-
-  .stat-label {
-    font-size: 0.55rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-top: 0.25rem;
-  }
-
-  .filter-tabs {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1.2rem;
-    flex-wrap: wrap;
-  }
-
-  .filter-tab {
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    border-radius: 50px;
-    color: var(--muted);
-    font-family: 'Montserrat', sans-serif;
-    font-size: 0.62rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    padding: 0.4rem 1rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-  }
-
-  .filter-tab .count {
-    background: var(--border2);
-    border-radius: 50px;
-    padding: 0.1rem 0.4rem;
-    font-size: 0.58rem;
-    color: var(--text);
-  }
-
-  .filter-tab.active {
-    background: var(--pink);
-    border-color: var(--pink);
-    color: #fff;
-    box-shadow: 0 0 14px var(--pink-glow);
-  }
-
-  .filter-tab.active .count { background: rgba(255,255,255,0.25); color: #fff; }
-
-  #library-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 8px;
-    max-height: 500px;
-    overflow-y: auto;
-  }
-
-  @media (max-width: 480px) {
-    #library-grid { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); }
-  }
-
-  .lib-item {
-    position: relative;
-    aspect-ratio: 1;
-    overflow: hidden;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    cursor: pointer;
-  }
-
-  .lib-item img, .lib-item video {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    display: block;
-    border-radius: 10px;
-  }
-
-  .lib-item .del-btn {
-    position: absolute;
-    top: 0.3rem; right: 0.3rem;
-    background: rgba(224,80,80,0.85);
-    border: none;
-    color: #fff;
-    font-size: 0.65rem;
-    width: 22px; height: 22px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Montserrat', sans-serif;
-  }
-
-  .lib-item:hover .del-btn { display: flex; }
-
-  .lib-item .type-tag {
-    position: absolute;
-    bottom: 0.25rem; left: 0.25rem;
-    font-size: 0.5rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    background: rgba(13,11,20,0.8);
-    color: var(--pink-light);
-    padding: 0.1rem 0.3rem;
-    border-radius: 10px;
-  }
-
-  #lib-empty {
-    font-size: 0.62rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--muted);
-    text-align: center;
-    padding: 3rem 1rem;
-  }
-
-  /* ── TOAST ── */
-  #toast {
-    position: fixed;
-    bottom: 2rem; right: 1.5rem;
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    border-radius: 10px;
-    padding: 0.8rem 1.2rem;
-    font-size: 0.68rem;
-    letter-spacing: 0.08em;
-    z-index: 300;
-    transform: translateY(120%);
-    transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
-    max-width: 300px;
-  }
-  #toast.show { transform: translateY(0); }
-  #toast.success { border-color: var(--success); color: var(--success); }
-  #toast.error { border-color: var(--danger); color: var(--danger); }
-
-  @media (max-width: 480px) {
-    header { padding: 1rem 1.2rem; }
-    .upload-section { padding: 0 1rem 2rem; }
-    .stats-row { gap: 0.5rem; }
-    .stat-num { font-size: 1.6rem; }
-  }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0e0d18;
+  --bg2:#13112a;
+  --card:#161428;
+  --pink:#e8649a;
+  --pink-dim:rgba(232,100,154,0.15);
+  --border:rgba(232,100,154,0.18);
+  --border2:rgba(232,100,154,0.08);
+  --text:#e8e0f0;
+  --muted:#7a6e8a;
+  --success:#6adaaa;
+  --danger:#ff6b6b;
+}
+body{
+  background:var(--bg);
+  background-image:radial-gradient(ellipse at 20% 0%,#1a0e2e 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,#1a0826 0%,transparent 60%);
+  color:var(--text);
+  font-family:'Montserrat',sans-serif;
+  font-weight:300;
+  min-height:100vh;
+  user-select:none;
+  -webkit-user-select:none;
+}
+
+/* LOGIN */
+#login-screen{
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2.5rem;
+  padding:2rem;
+}
+.login-brand{text-align:center;}
+.login-brand .title-row{display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:0.5rem;}
+.tline{height:1px;width:60px;background:linear-gradient(to right,transparent,var(--pink));}
+.tline.r{background:linear-gradient(to left,transparent,var(--pink));}
+.login-brand h1{font-family:'Cormorant Garamond',serif;font-size:clamp(2.5rem,10vw,4.5rem);font-weight:300;letter-spacing:0.25em;}
+.login-brand .sub{font-size:0.58rem;letter-spacing:0.35em;text-transform:uppercase;color:var(--muted);}
+.login-box{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:2.5rem;
+  width:100%;max-width:360px;
+}
+.login-box h2{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:300;letter-spacing:0.2em;margin-bottom:1.8rem;color:var(--text);}
+.field{margin-bottom:1.2rem;}
+.field label{display:block;font-size:0.58rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;}
+.field input{
+  width:100%;background:rgba(255,255,255,0.04);
+  border:1px solid var(--border2);border-radius:6px;
+  color:var(--text);font-family:'Montserrat',sans-serif;
+  font-size:0.85rem;font-weight:300;
+  padding:0.75rem 1rem;outline:none;
+  transition:border-color 0.2s;
+  user-select:text;-webkit-user-select:text;
+}
+.field input:focus{border-color:var(--pink);}
+.btn-pink{
+  width:100%;background:var(--pink);color:#fff;border:none;
+  font-family:'Montserrat',sans-serif;font-size:0.65rem;
+  font-weight:400;letter-spacing:0.25em;text-transform:uppercase;
+  padding:0.9rem;border-radius:100px;cursor:pointer;
+  transition:opacity 0.2s;margin-top:0.5rem;
+}
+.btn-pink:hover{opacity:0.85;}
+.btn-pink:disabled{opacity:0.4;cursor:not-allowed;}
+#login-error{font-size:0.65rem;letter-spacing:0.1em;color:var(--danger);margin-top:1rem;display:none;text-align:center;}
+
+/* ADMIN PANEL */
+#admin-panel{display:none;}
+
+header{
+  position:sticky;top:0;z-index:100;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:1rem 2rem;
+  background:rgba(14,13,24,0.92);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border2);
+}
+.logo{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:300;letter-spacing:0.2em;}
+.admin-tag{font-family:'Montserrat',sans-serif;font-size:0.55rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--pink);margin-left:0.5rem;vertical-align:middle;}
+#logout-btn{
+  background:none;border:1px solid var(--border);
+  color:var(--muted);font-family:'Montserrat',sans-serif;
+  font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;
+  padding:0.4rem 0.9rem;border-radius:100px;cursor:pointer;
+  transition:color 0.2s,border-color 0.2s;
+}
+#logout-btn:hover{color:var(--danger);border-color:var(--danger);}
+
+/* HERO */
+.page-hero{text-align:center;padding:2.5rem 1.5rem 1rem;}
+.page-hero .title-row{display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:0.5rem;}
+.page-hero h2{font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,8vw,3.5rem);font-weight:300;letter-spacing:0.25em;}
+.page-hero .sub{font-size:0.58rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--muted);margin-bottom:0.8rem;}
+.plus-icon{font-size:1.2rem;color:var(--pink);opacity:0.6;margin-top:0.3rem;}
+
+/* UPLOAD SECTION */
+.upload-section{max-width:1100px;margin:0 auto;padding:0 1.5rem 4rem;}
+
+.section-label{
+  font-size:0.58rem;letter-spacing:0.3em;text-transform:uppercase;
+  color:var(--muted);text-align:center;
+  padding:1.5rem 0 1rem;
+  position:relative;
+}
+.section-label::before,.section-label::after{
+  content:'';position:absolute;top:50%;
+  width:30%;height:1px;
+  background:linear-gradient(to right,transparent,var(--border));
+}
+.section-label::before{left:0;}
+.section-label::after{right:0;background:linear-gradient(to left,transparent,var(--border));}
+
+.upload-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:1rem;
+  margin-bottom:1.5rem;
+}
+@media(max-width:700px){.upload-grid{grid-template-columns:1fr;}}
+
+.upload-card{
+  background:var(--card);
+  border:1px solid var(--border2);
+  border-radius:10px;
+  padding:1.2rem;
+}
+.upload-card-title{
+  font-size:0.58rem;letter-spacing:0.25em;text-transform:uppercase;
+  color:var(--pink);margin-bottom:0.3rem;
+}
+.upload-card-formats{
+  font-size:0.55rem;letter-spacing:0.1em;
+  color:var(--muted);margin-bottom:0.8rem;
+}
+.drop-zone{
+  border:1px dashed var(--border);
+  border-radius:8px;
+  padding:2rem 1rem;
+  text-align:center;
+  cursor:pointer;
+  position:relative;
+  transition:border-color 0.2s,background 0.2s;
+  background:rgba(255,255,255,0.02);
+}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--pink);background:rgba(232,100,154,0.05);}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.flower{font-size:1.6rem;display:block;margin-bottom:0.6rem;}
+.drop-zone p{font-size:0.58rem;letter-spacing:0.12em;color:var(--muted);line-height:1.6;}
+
+/* Queue */
+#upload-queue{display:flex;flex-direction:column;gap:0.6rem;margin-bottom:1rem;}
+.queue-item{
+  background:var(--card);border:1px solid var(--border2);
+  border-radius:8px;padding:0.7rem 1rem;
+  display:flex;align-items:center;gap:0.75rem;
+}
+.file-type{
+  font-size:0.55rem;letter-spacing:0.1em;text-transform:uppercase;
+  padding:0.15rem 0.4rem;border:1px solid var(--border);
+  border-radius:3px;color:var(--muted);white-space:nowrap;
+}
+.file-name{flex:1;font-size:0.68rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);}
+.file-status{font-size:0.62rem;color:var(--muted);min-width:60px;text-align:right;}
+.queue-item.uploading .file-status{color:var(--pink);}
+.queue-item.done .file-status{color:var(--success);}
+.queue-item.error .file-status{color:var(--danger);}
+.progress-bar{height:2px;background:var(--border2);margin-top:0.4rem;border-radius:1px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--pink);width:0%;transition:width 0.2s;}
+
+#upload-btn{
+  display:none;width:100%;
+  background:var(--pink);color:#fff;border:none;
+  font-family:'Montserrat',sans-serif;font-size:0.65rem;
+  font-weight:400;letter-spacing:0.25em;text-transform:uppercase;
+  padding:0.9rem;border-radius:100px;cursor:pointer;
+  transition:opacity 0.2s;margin-bottom:0.5rem;
+}
+#upload-btn:hover{opacity:0.85;}
+#upload-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-bottom:1.2rem;}
+@media(max-width:480px){.stats-row{grid-template-columns:repeat(2,1fr);}}
+.stat{background:var(--card);border:1px solid var(--border2);border-radius:8px;padding:0.8rem;text-align:center;}
+.stat-num{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:300;color:var(--text);}
+.stat-label{font-size:0.55rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-top:0.2rem;}
+
+/* Filter tabs */
+.filter-tabs{display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;}
+.filter-tab{
+  background:none;border:1px solid var(--border2);
+  color:var(--muted);font-family:'Montserrat',sans-serif;
+  font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;
+  padding:0.4rem 0.9rem;border-radius:100px;cursor:pointer;
+  transition:all 0.2s;
+}
+.filter-tab.active{background:var(--pink-dim);border-color:var(--pink);color:var(--pink);}
+.filter-tab:hover:not(.active){color:var(--text);}
+.count{
+  display:inline-block;background:var(--border2);
+  border-radius:100px;padding:0.1rem 0.4rem;
+  font-size:0.55rem;margin-left:0.3rem;
+}
+
+/* Library grid */
+#library-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(110px,1fr));
+  gap:8px;
+}
+.lib-item{
+  position:relative;aspect-ratio:1;overflow:hidden;
+  background:var(--card);border:1px solid var(--border2);
+  border-radius:6px;
+}
+.lib-item img,.lib-item video{width:100%;height:100%;object-fit:cover;display:block;}
+.del-btn{
+  position:absolute;top:0.3rem;right:0.3rem;
+  background:rgba(255,107,107,0.85);border:none;
+  color:#fff;font-size:0.6rem;width:20px;height:20px;
+  border-radius:50%;cursor:pointer;display:none;
+  align-items:center;justify-content:center;
+}
+.lib-item:hover .del-btn{display:flex;}
+.type-tag{
+  position:absolute;bottom:0.3rem;left:0.3rem;
+  font-size:0.5rem;letter-spacing:0.08em;text-transform:uppercase;
+  background:rgba(14,13,24,0.8);color:var(--pink);
+  padding:0.1rem 0.3rem;border-radius:2px;
+}
+#lib-empty{
+  font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--muted);text-align:center;padding:3rem 1rem;
+}
+
+/* Loading overlay for library */
+#lib-loading{
+  font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--muted);text-align:center;padding:2rem;
+  display:none;
+}
+
+/* Toast */
+#toast{
+  position:fixed;bottom:2rem;right:1.5rem;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:0.8rem 1.2rem;
+  font-size:0.65rem;letter-spacing:0.08em;
+  z-index:300;transform:translateY(120%);
+  transition:transform 0.3s cubic-bezier(0.16,1,0.3,1);
+  max-width:300px;
+}
+#toast.show{transform:translateY(0);}
+#toast.success{border-color:var(--success);color:var(--success);}
+#toast.error{border-color:var(--danger);color:var(--danger);}
+
+@media(max-width:480px){
+  header{padding:1rem 1.2rem;}
+  .upload-section{padding:0 1rem 2rem;}
+}
 </style>
 </head>
 <body>
@@ -584,14 +279,18 @@
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-brand">
-    <h1>Юмилия</h1>
+    <div class="title-row">
+      <div class="tline"></div>
+      <h1>Юмилия</h1>
+      <div class="tline r"></div>
+    </div>
     <p class="sub">Управление галереей</p>
   </div>
   <div class="login-box">
     <h2>Вход</h2>
     <div class="field">
       <label>Пароль</label>
-      <input type="password" id="password-input" placeholder="Введите пароль">
+      <input type="password" id="password-input" placeholder="Введите пароль" autocomplete="current-password">
     </div>
     <button class="btn-pink" id="login-btn">Войти</button>
     <div id="login-error">Неверный пароль. Попробуйте снова.</div>
@@ -616,7 +315,8 @@
   </div>
 
   <div class="upload-section">
-    <!-- Upload cards -->
+    <div class="section-label">Загрузка</div>
+
     <div class="upload-grid">
       <div class="upload-card">
         <div class="upload-card-title">Фото</div>
@@ -650,8 +350,7 @@
     <div id="upload-queue"></div>
     <button id="upload-btn">Загрузить всё</button>
 
-    <!-- Library -->
-    <div class="section-label" style="margin-top: 2.5rem;">Управление</div>
+    <div class="section-label" style="margin-top:1.5rem;">Управление</div>
 
     <div class="stats-row">
       <div class="stat"><div class="stat-num" id="stat-total">—</div><div class="stat-label">Всего</div></div>
@@ -667,6 +366,7 @@
       <button class="filter-tab" data-lib-filter="video">Видео <span class="count" id="lt-video">0</span></button>
     </div>
 
+    <div id="lib-loading">Загрузка библиотеки...</div>
     <div id="lib-empty" style="display:none">Нет загруженных файлов</div>
     <div id="library-grid"></div>
   </div>
@@ -676,195 +376,156 @@
 
 <script>
 // ============================================================
-const ADMIN_PASSWORD   = 'yumiliyaporn1';
-const CLOUD_NAME       = 'dflgldw4j';
-const UPLOAD_PRESET    = 'gallery_unsigned';
-const FOLDER           = 'gallery';
+const ADMIN_PASSWORD = 'yumiliyaporn1';
+const CLOUD_NAME     = 'dflgldw4j';
+const UPLOAD_PRESET  = 'gallery_unsigned';
+const FOLDER         = 'gallery';
 // ============================================================
 
 const SESSION_KEY = 'gallery_admin_auth';
-const MANIFEST_KEY = 'gallery_manifest_v1';
-
-let manifest = { items: [], version: 0 };
 let libFilter = 'all';
 let fileQueue = [];
 
-function loadManifestLocal() {
-  try {
-    const saved = localStorage.getItem(MANIFEST_KEY);
-    if (saved) manifest = JSON.parse(saved);
-  } catch(e) { manifest = { items: [], version: 0 }; }
-}
-
-function saveManifestLocal() {
-  localStorage.setItem(MANIFEST_KEY, JSON.stringify(manifest));
-}
-
 // ── Auth ──
 function checkAuth() { return sessionStorage.getItem(SESSION_KEY) === 'true'; }
-
 function login(pw) {
-  if (pw === ADMIN_PASSWORD) {
-    sessionStorage.setItem(SESSION_KEY, 'true');
-    showPanel();
-    return true;
-  }
+  if (pw === ADMIN_PASSWORD) { sessionStorage.setItem(SESSION_KEY,'true'); showPanel(); return true; }
   return false;
 }
-
 function logout() { sessionStorage.removeItem(SESSION_KEY); location.reload(); }
-
 function showPanel() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('admin-panel').style.display = 'block';
-  loadManifestLocal();
   loadLibrary();
 }
 
 document.getElementById('login-btn').addEventListener('click', () => {
   const pw = document.getElementById('password-input').value;
-  if (!login(pw)) {
-    document.getElementById('login-error').style.display = 'block';
-    document.getElementById('password-input').value = '';
-  }
+  if (!login(pw)) { document.getElementById('login-error').style.display='block'; document.getElementById('password-input').value=''; }
 });
-
 document.getElementById('password-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('login-btn').click();
-  document.getElementById('login-error').style.display = 'none';
+  if (e.key==='Enter') document.getElementById('login-btn').click();
+  document.getElementById('login-error').style.display='none';
 });
-
 document.getElementById('logout-btn').addEventListener('click', logout);
 if (checkAuth()) showPanel();
 
 // ── Toast ──
-function toast(msg, type = 'success') {
+function toast(msg, type='success') {
   const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = `show ${type}`;
-  setTimeout(() => { el.className = ''; }, 3500);
+  el.textContent = msg; el.className = `show ${type}`;
+  setTimeout(() => { el.className=''; }, 3500);
 }
 
 // ── Drop zones ──
-function setupDropZone(dzId, inputId, accept) {
-  const dz = document.getElementById(dzId);
-  const inp = document.getElementById(inputId);
-
+['image','gif','video'].forEach(t => {
+  const dz = document.getElementById(`dz-${t}`);
+  const inp = document.getElementById(`fi-${t}`);
   dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
   dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
-  dz.addEventListener('drop', e => {
-    e.preventDefault();
-    dz.classList.remove('drag-over');
-    addFiles([...e.dataTransfer.files]);
-  });
-  inp.addEventListener('change', () => { addFiles([...inp.files]); inp.value = ''; });
-}
-
-setupDropZone('dz-image', 'fi-image');
-setupDropZone('dz-gif', 'fi-gif');
-setupDropZone('dz-video', 'fi-video');
+  dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); addFiles([...e.dataTransfer.files]); });
+  inp.addEventListener('change', () => { addFiles([...inp.files]); inp.value=''; });
+});
 
 function getFileType(file) {
-  if (file.type === 'image/gif' || file.type === 'image/apng') return 'gif';
+  if (file.type==='image/gif'||file.type==='image/apng') return 'gif';
   if (file.type.startsWith('video/')) return 'video';
   return 'image';
 }
 
 function addFiles(files) {
   files.forEach(file => {
-    const id = Date.now() + '_' + Math.floor(Math.random() * 10000);
-    fileQueue.push({ id, file, status: 'pending' });
-    renderQueueItem(id, file);
+    const id = Date.now()+'_'+Math.floor(Math.random()*10000);
+    fileQueue.push({id,file,status:'pending'});
+    const type = getFileType(file);
+    const div = document.createElement('div');
+    div.className='queue-item'; div.id=`q-${id}`;
+    div.innerHTML=`<span class="file-type">${type}</span><span class="file-name">${file.name}</span><span class="file-status">ожидание</span><div class="progress-bar" style="display:none"><div class="progress-fill"></div></div>`;
+    document.getElementById('upload-queue').appendChild(div);
   });
-  if (fileQueue.length > 0) document.getElementById('upload-btn').style.display = 'block';
-}
-
-function renderQueueItem(id, file) {
-  const type = getFileType(file);
-  const div = document.createElement('div');
-  div.className = 'queue-item';
-  div.id = `q-${id}`;
-  div.innerHTML = `
-    <span class="file-type">${type}</span>
-    <span class="file-name">${file.name}</span>
-    <span class="file-status">ожидание</span>
-    <div class="progress-bar" style="display:none"><div class="progress-fill"></div></div>
-  `;
-  document.getElementById('upload-queue').appendChild(div);
+  if (fileQueue.length>0) document.getElementById('upload-btn').style.display='block';
 }
 
 // ── Upload ──
 document.getElementById('upload-btn').addEventListener('click', async () => {
-  const pending = fileQueue.filter(f => f.status === 'pending');
+  const pending = fileQueue.filter(f=>f.status==='pending');
   if (!pending.length) return;
-
   const btn = document.getElementById('upload-btn');
-  btn.disabled = true;
-  btn.textContent = 'Загрузка...';
+  btn.disabled=true; btn.textContent='Загрузка...';
 
   for (const item of pending) await uploadFile(item);
 
-  const uploaded = fileQueue.filter(f => f.status === 'done' && f.url);
-  await updateManifest(uploaded);
-  fileQueue = fileQueue.filter(f => f.status !== 'done');
-  btn.disabled = false;
-  btn.textContent = 'Загрузить всё';
-  loadLibrary();
+  const uploaded = fileQueue.filter(f=>f.status==='done'&&f.url);
+  if (uploaded.length) await updateManifest(uploaded);
+
+  fileQueue = fileQueue.filter(f=>f.status!=='done');
+  btn.disabled=false; btn.textContent='Загрузить всё';
+  await loadLibrary();
 });
 
 async function uploadFile(item) {
   const el = document.getElementById(`q-${item.id}`);
   if (!el) return;
-
   el.classList.add('uploading');
-  el.querySelector('.file-status').textContent = 'загрузка';
-  el.querySelector('.progress-bar').style.display = 'block';
+  el.querySelector('.file-status').textContent='загрузка';
+  el.querySelector('.progress-bar').style.display='block';
 
   const formData = new FormData();
   formData.append('file', item.file);
   formData.append('upload_preset', UPLOAD_PRESET);
   formData.append('folder', FOLDER);
-
   const resourceType = item.file.type.startsWith('video/') ? 'video' : 'image';
 
   try {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`);
-
     xhr.upload.addEventListener('progress', e => {
       if (e.lengthComputable) {
-        const pct = Math.round((e.loaded / e.total) * 100);
-        el.querySelector('.progress-fill').style.width = pct + '%';
-        el.querySelector('.file-status').textContent = pct + '%';
+        const pct = Math.round((e.loaded/e.total)*100);
+        el.querySelector('.progress-fill').style.width=pct+'%';
+        el.querySelector('.file-status').textContent=pct+'%';
       }
     });
-
-    await new Promise((res, rej) => {
+    await new Promise((res,rej) => {
       xhr.onload = () => {
-        if (xhr.status === 200) {
+        if (xhr.status===200) {
           const data = JSON.parse(xhr.responseText);
-          item.status = 'done';
-          item.url = data.secure_url;
-          el.classList.remove('uploading');
-          el.classList.add('done');
-          el.querySelector('.file-status').textContent = '✓ готово';
+          item.status='done'; item.url=data.secure_url;
+          el.classList.remove('uploading'); el.classList.add('done');
+          el.querySelector('.file-status').textContent='✓ готово';
           res();
-        } else { rej(new Error(xhr.responseText)); }
+        } else rej(new Error(xhr.responseText));
       };
       xhr.onerror = () => rej(new Error('Network error'));
       xhr.send(formData);
     });
   } catch(err) {
-    item.status = 'error';
-    el.classList.remove('uploading');
-    el.classList.add('error');
-    el.querySelector('.file-status').textContent = 'ошибка';
+    item.status='error';
+    el.classList.remove('uploading'); el.classList.add('error');
+    el.querySelector('.file-status').textContent='ошибка';
     console.error(err);
   }
 }
 
-// ── Manifest ──
+// ── Manifest — always fetch latest from Cloudinary first ──
+async function fetchLatestManifest() {
+  for (let v=99; v>=0; v--) {
+    const vStr = String(v).padStart(3,'0');
+    try {
+      const resp = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/${FOLDER}/manifest_${vStr}.json?t=${Date.now()}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.items) return data; // found it
+      }
+    } catch(e) {}
+  }
+  return { items:[], version:0 };
+}
+
 async function updateManifest(uploadedItems) {
+  // Always fetch the current state from Cloudinary before writing
+  const current = await fetchLatestManifest();
+
   const newItems = uploadedItems.map(f => ({
     url: f.url,
     type: getFileType(f.file),
@@ -872,95 +533,94 @@ async function updateManifest(uploadedItems) {
     uploadedAt: new Date().toISOString()
   }));
 
-  manifest.items = [...manifest.items, ...newItems];
-  manifest.version = (manifest.version || 0) + 1;
-  saveManifestLocal();
+  current.items = [...current.items, ...newItems];
+  current.version = (current.version||0) + 1;
 
-  const vStr = String(manifest.version).padStart(3, '0');
-  console.log('Saving manifest version', vStr, 'with', manifest.items.length, 'items');
+  const vStr = String(current.version).padStart(3,'0');
+  console.log('Writing manifest_'+vStr+' with '+current.items.length+' items');
 
   try {
-    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(current)],{type:'application/json'});
     const formData = new FormData();
     formData.append('file', blob, `manifest_${vStr}.json`);
     formData.append('upload_preset', UPLOAD_PRESET);
     formData.append('public_id', `${FOLDER}/manifest_${vStr}`);
-
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/raw/upload`, {
-      method: 'POST', body: formData
-    });
-
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/raw/upload`,{method:'POST',body:formData});
     const data = await res.json();
-    console.log('Manifest response:', data);
     if (!res.ok) throw new Error(JSON.stringify(data));
-    toast('Загрузка завершена! 🌸', 'success');
+    toast('Загрузка завершена! 🌸','success');
   } catch(e) {
-    console.error('Manifest sync failed:', e);
-    toast('Ошибка синхронизации', 'error');
+    console.error('Manifest failed:',e);
+    toast('Ошибка синхронизации','error');
   }
 }
 
 // ── Library ──
-function loadLibrary() {
-  loadManifestLocal();
-  const items = manifest.items || [];
-  const images = items.filter(i => i.type === 'image').length;
-  const gifs = items.filter(i => i.type === 'gif').length;
-  const videos = items.filter(i => i.type === 'video').length;
+async function loadLibrary() {
+  document.getElementById('lib-loading').style.display='block';
+  document.getElementById('library-grid').innerHTML='';
+  document.getElementById('lib-empty').style.display='none';
 
-  document.getElementById('stat-total').textContent = items.length;
-  document.getElementById('stat-images').textContent = images;
-  document.getElementById('stat-gifs').textContent = gifs;
-  document.getElementById('stat-videos').textContent = videos;
-  document.getElementById('lt-all').textContent = items.length;
-  document.getElementById('lt-image').textContent = images;
-  document.getElementById('lt-gif').textContent = gifs;
-  document.getElementById('lt-video').textContent = videos;
+  const manifest = await fetchLatestManifest();
+  document.getElementById('lib-loading').style.display='none';
 
-  const filtered = libFilter === 'all' ? items : items.filter(i => i.type === libFilter);
+  const items = manifest.items||[];
+  const images = items.filter(i=>i.type==='image').length;
+  const gifs = items.filter(i=>i.type==='gif').length;
+  const videos = items.filter(i=>i.type==='video').length;
+
+  document.getElementById('stat-total').textContent=items.length;
+  document.getElementById('stat-images').textContent=images;
+  document.getElementById('stat-gifs').textContent=gifs;
+  document.getElementById('stat-videos').textContent=videos;
+  document.getElementById('lt-all').textContent=items.length;
+  document.getElementById('lt-image').textContent=images;
+  document.getElementById('lt-gif').textContent=gifs;
+  document.getElementById('lt-video').textContent=videos;
+
+  const filtered = libFilter==='all' ? items : items.filter(i=>i.type===libFilter);
   const grid = document.getElementById('library-grid');
-  const empty = document.getElementById('lib-empty');
 
-  if (!filtered.length) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
-  empty.style.display = 'none';
-  grid.innerHTML = '';
+  if (!filtered.length) { document.getElementById('lib-empty').style.display='block'; return; }
 
-  filtered.forEach((item, idx) => {
+  filtered.forEach((item,idx) => {
     const realIdx = items.indexOf(item);
     const div = document.createElement('div');
-    div.className = 'lib-item';
-    if (item.type === 'video') {
-      div.innerHTML = `<video src="${item.url}" muted loop autoplay playsinline></video><span class="type-tag">видео</span><button class="del-btn" data-idx="${realIdx}">✕</button>`;
+    div.className='lib-item';
+    if (item.type==='video') {
+      div.innerHTML=`<video src="${item.url}" muted loop autoplay playsinline></video><span class="type-tag">видео</span><button class="del-btn" data-idx="${realIdx}">✕</button>`;
     } else {
-      div.innerHTML = `<img src="${item.url}" alt="" loading="lazy" draggable="false">${item.type === 'gif' ? '<span class="type-tag">gif</span>' : ''}<button class="del-btn" data-idx="${realIdx}">✕</button>`;
+      div.innerHTML=`<img src="${item.url}" alt="" loading="lazy" draggable="false">${item.type==='gif'?'<span class="type-tag">gif</span>':''}<button class="del-btn" data-idx="${realIdx}">✕</button>`;
     }
-    div.querySelector('.del-btn').addEventListener('click', e => { e.stopPropagation(); deleteItem(realIdx); });
+    div.querySelector('.del-btn').addEventListener('click', e => { e.stopPropagation(); deleteItem(realIdx, manifest); });
     grid.appendChild(div);
   });
 }
 
-async function deleteItem(idx) {
+async function deleteItem(idx, manifest) {
   if (!confirm('Удалить этот файл из галереи?')) return;
-  manifest.items.splice(idx, 1);
-  manifest.version = (manifest.version || 0) + 1;
-  saveManifestLocal();
 
-  const vStr = String(manifest.version).padStart(3, '0');
+  // Fetch fresh manifest first to avoid conflicts
+  const current = await fetchLatestManifest();
+  current.items.splice(idx,1);
+  current.version = (current.version||0)+1;
+
+  const vStr = String(current.version).padStart(3,'0');
   try {
-    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(current)],{type:'application/json'});
     const formData = new FormData();
     formData.append('file', blob, `manifest_${vStr}.json`);
     formData.append('upload_preset', UPLOAD_PRESET);
     formData.append('public_id', `${FOLDER}/manifest_${vStr}`);
-    await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/raw/upload`, { method: 'POST', body: formData });
-    toast('Файл удалён', 'success');
-  } catch(e) { toast('Удалён локально', 'success'); }
+    await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/raw/upload`,{method:'POST',body:formData});
+    toast('Файл удалён','success');
+  } catch(e) { toast('Ошибка удаления','error'); }
   loadLibrary();
 }
 
 document.querySelectorAll('.filter-tab').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.filter-tab').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     libFilter = btn.dataset.libFilter;
     loadLibrary();
