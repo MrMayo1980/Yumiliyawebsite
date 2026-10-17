@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {readFile,mkdtemp,mkdir,writeFile,cp,readdir,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {GithubPublisher} from '../pages-admin.js';
+import {GithubPublisher} from '../cloudflare/github.mjs';
+import {PasswordPublisher} from '../pages-admin.js';
 import {localMediaUrl} from '../hosting.js';
 import {buildPages,PUBLIC_FILES} from '../scripts/build-pages.mjs';
 import {DEFAULT_APPEARANCE} from '../appearance.js';
@@ -28,17 +29,22 @@ function fakeGithub({revision=0,allowPush=true,failUpdate=false}={}){
 }
 test('GitHub publication commits source and Pages data/assets atomically, preserves files and never persists the token',async()=>{
  const {requests,fetcher}=fakeGithub(),client=new GithubPublisher({owner:'MrMayo1980',repo:'Yumiliyawebsite'},fetcher);
- assert.equal(await client.login('test-token-not-a-real-credential'),'MrMayo1980');
- const result=await client.publish(document,0,[{path:'assets/media/test.png',blob:new Blob(['test-art'])}]);assert.equal(result.revision,1);
+ client.token='test-token-not-a-real-credential';
+ const result=await client.publish(document,0,[{path:'assets/media/test.png',sha:'a'.repeat(40)}]);assert.equal(result.revision,1);
  const tree=requests.find(x=>x.path.endsWith('/git/trees')).data;assert.equal(tree.base_tree,'base-tree');assert.deepEqual(tree.tree.map(x=>x.path),['assets/media/test.png','docs/assets/media/test.png','data/site-state.json','docs/data/site-state.json']);
  const commit=requests.find(x=>x.path.endsWith('/git/commits')).data;assert.deepEqual(commit.parents,['head-sha']);assert.equal(commit.tree,'new-tree');
  const update=requests.find(x=>x.path.includes('/git/refs/')).data;assert.equal(update.force,false);assert.equal(update.sha,'new-commit');
  assert.ok(requests.every(x=>x.options.headers.Authorization==='Bearer test-token-not-a-real-credential'));assert.ok(!requests.some(x=>JSON.stringify(x.data).includes('test-token-not-a-real-credential')));
 });
-test('GitHub login rejects read-only accounts and publication rejects stale revisions and protected branch errors',async()=>{
- const readonly=new GithubPublisher({owner:'MrMayo1980',repo:'Yumiliyawebsite'},fakeGithub({allowPush:false}).fetcher);await assert.rejects(readonly.login('test-only'),e=>e.status===403);assert.equal(readonly.token,'');
- const changed=fakeGithub({revision:2}),client=new GithubPublisher({owner:'MrMayo1980',repo:'Yumiliyawebsite'},changed.fetcher);await client.login('test-only');await assert.rejects(client.publish(document,0,[]),e=>e.status===409);assert.ok(!changed.requests.some(x=>x.options.method==='POST'));
- const failing=new GithubPublisher({owner:'MrMayo1980',repo:'Yumiliyawebsite'},fakeGithub({failUpdate:true}).fetcher);await failing.login('test-only');await assert.rejects(failing.publish(document,0,[]),e=>e.status===422);
+test('server publication rejects stale revisions and protected branch errors',async()=>{
+ const changed=fakeGithub({revision:2}),client=new GithubPublisher({owner:'MrMayo1980',repo:'Yumiliyawebsite'},changed.fetcher);client.token='test-only';await assert.rejects(client.publish(document,0,[]),e=>e.status===409);assert.ok(!changed.requests.some(x=>x.options.method==='POST'));
+ const failing=new GithubPublisher({owner:'MrMayo1980',repo:'Yumiliyawebsite'},fakeGithub({failUpdate:true}).fetcher);failing.token='test-only';await assert.rejects(failing.publish(document,0,[]),e=>e.status===422);
+});
+test('Pages login uses only the password service and clears its in-memory session on logout',async()=>{
+ const calls=[];const client=new PasswordPublisher({apiBase:'https://login.example.workers.dev'},async(url,options)=>{calls.push({url,options});return Response.json(url.endsWith('/login')?{session:'temporary-session'}:{ok:true});});
+ await client.login('example-shared-password');assert.equal(client.session,'temporary-session');assert.equal(calls[0].url,'https://login.example.workers.dev/api/login');assert.equal(JSON.parse(calls[0].options.body).password,'example-shared-password');
+ await client.logout();assert.equal(client.session,'');assert.equal(calls[1].options.headers.Authorization,'Bearer temporary-session');assert.ok(calls.every(call=>call.options.credentials==='omit'&&!call.url.includes('github.com')));
+ assert.throws(()=>new PasswordPublisher({apiBase:'http://unsafe.example'}));assert.throws(()=>new PasswordPublisher({apiBase:''}));
 });
 test('HTTPS project-site media paths work without allowing private local endpoints',()=>{
  globalThis.location=new URL('https://mrmayo1980.github.io/Yumiliyawebsite/admin.html');
@@ -49,7 +55,8 @@ test('Pages build includes both applications and excludes credentials, source se
  const source=await mkdtemp(join(tmpdir(),'yumiliya-pages-'));t.after(()=>rm(source,{recursive:true,force:true}));
  for(const file of PUBLIC_FILES)await cp(new URL('../'+file,import.meta.url),join(source,file));await cp(new URL('../assets/',import.meta.url),join(source,'assets'),{recursive:true});await cp(new URL('../data/',import.meta.url),join(source,'data'),{recursive:true});
  await mkdir(join(source,'.data'));await writeFile(join(source,'.data/credentials.json'),'private-test-secret');await writeFile(join(source,'.env'),'private-test-secret');await mkdir(join(source,'uploads'));await writeFile(join(source,'uploads/unpublished.png'),'private-unpublished-art');
- await buildPages({source});const names=await readdir(join(source,'docs'));assert.ok(names.includes('index.html'));assert.ok(names.includes('admin.html'));assert.ok(!names.some(x=>['.data','.env','server','tests','uploads'].includes(x)));assert.ok(names.includes('.nojekyll'));
- const html=await readFile(join(source,'docs/admin.html'),'utf8');assert.match(html,/pages-config.js/);assert.match(html,/https:\/\/api.github.com/);assert.ok(!html.includes('private-test-secret'));
+ await buildPages({source,apiBase:'https://login.example.workers.dev'});const names=await readdir(join(source,'docs'));assert.ok(names.includes('index.html'));assert.ok(names.includes('admin.html'));assert.ok(!names.some(x=>['.data','.env','server','tests','uploads'].includes(x)));assert.ok(names.includes('.nojekyll'));
+ const html=await readFile(join(source,'docs/admin.html'),'utf8');assert.match(html,/pages-config.js/);assert.match(html,/https:\/\/login.example.workers.dev/);assert.ok(!html.includes('api.github.com'));assert.ok(!html.includes('private-test-secret'));
+ const browser=await readFile(join(source,'docs/pages-admin.js'),'utf8');assert.ok(!browser.includes('api.github.com'));assert.ok(!browser.includes('GITHUB_TOKEN'));const admin=await readFile(join(source,'docs/admin.js'),'utf8');assert.ok(!admin.includes('Токен доступа'));
  const runtime=await readFile(join(source,'docs/pages-config.js'),'utf8');assert.match(runtime,/MrMayo1980/);assert.ok(!runtime.includes('private-test-secret'));
 });

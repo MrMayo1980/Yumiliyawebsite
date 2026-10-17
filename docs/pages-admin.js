@@ -2,53 +2,31 @@ import {validateDocument} from './validation.js';
 import {pagesSettings,registerPendingAsset} from './hosting.js';
 const clone=value=>structuredClone(value);
 const problem=(message,status=400)=>Object.assign(new Error(message),{status});
-export class GithubPublisher{
- constructor({owner,repo,branch='main',prefix='docs/'},fetcher=fetch){this.owner=owner;this.repo=repo;this.branch=branch;this.prefix=prefix;this.fetcher=fetcher;this.token='';}
- async request(path,{method='GET',data}={}){
-  if(!this.token)throw problem('Войдите с токеном GitHub.',401);
-  let response;try{response=await this.fetcher('https://api.github.com'+path,{method,headers:{Accept:'application/vnd.github+json',Authorization:'Bearer '+this.token,'X-GitHub-Api-Version':'2026-03-10',...(data?{'Content-Type':'application/json'}:{})},body:data?JSON.stringify(data):undefined,cache:'no-store',credentials:'omit',redirect:'error'});}catch{throw problem('Не удалось связаться с GitHub. Проверьте подключение.',503);}
-  const body=response.status===204?{}:await response.json();
-  if(!response.ok){
-   const messages={401:'Токен GitHub недействителен или истёк.',403:'GitHub отклонил запрос. Проверьте доступ токена к этому репозиторию и разрешение Contents: Read and write.',404:'Репозиторий или файл недоступен этому токену.',409:'В репозитории появились изменения. Загрузите актуальную версию перед публикацией.',422:'Ветка изменилась или защищена. Обновите данные и повторите публикацию.'};
-   throw problem(messages[response.status]||'GitHub не смог выполнить запрос.',response.status);
-  }
-  return body;
+export class PasswordPublisher{
+ constructor({apiBase},fetcher=(...args)=>fetch(...args)){
+  let url;try{url=new URL(apiBase);}catch{throw problem('Вход ещё не подключён. Владелец сайта должен завершить настройку сервиса.',503);}
+  if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash)throw problem('Некорректный адрес сервиса входа.',503);
+  this.base=url.href.replace(/\/$/,'');this.fetcher=fetcher;this.session='';
  }
- get base(){return `/repos/${encodeURIComponent(this.owner)}/${encodeURIComponent(this.repo)}`;}
- async login(token){
-  if(typeof token!=='string'||!token.trim()||token.length>500)throw problem('Укажите токен GitHub.',401);
-  this.token=token.trim();
-  try{const user=await this.request('/user'),repo=await this.request(this.base);if(!repo.permissions?.push)throw problem('У этого аккаунта нет права записи в репозиторий.',403);return user.login;}catch(error){this.token='';throw error;}
+ async request(path,{method='GET',data,body}={}){
+  let response;try{response=await this.fetcher(this.base+'/api/'+path,{method,headers:{...(this.session?{Authorization:'Bearer '+this.session}:{}),...(data!==undefined||body!==undefined?{'Content-Type':'application/json'}:{})},body:body??(data!==undefined?JSON.stringify(data):undefined),credentials:'omit',cache:'no-store',redirect:'error'});}catch{throw problem('Не удалось связаться с сервисом входа. Повторите позже.',503);}
+  let result;try{result=await response.json();}catch{throw problem('Сервис входа временно недоступен.',503);}
+  if(!response.ok){if(response.status===401)this.session='';throw problem(result.error||'Не удалось выполнить запрос.',response.status);}return result;
  }
- async head(){return (await this.request(this.base+'/git/ref/heads/'+encodeURIComponent(this.branch))).object.sha;}
- async readState(ref){
-  const file=await this.request(this.base+'/contents/data/site-state.json?ref='+encodeURIComponent(ref));
-  const blob=file.content?file:await this.request(this.base+'/git/blobs/'+file.sha);
-  const bytes=Uint8Array.from(atob(blob.content.replace(/\s/g,'')),c=>c.charCodeAt(0));
-  const state=JSON.parse(new TextDecoder().decode(bytes));state.published=validateDocument(state.published,true);return state;
- }
- async blob(content,encoding='utf-8'){return (await this.request(this.base+'/git/blobs',{method:'POST',data:{content,encoding}})).sha;}
+ async login(password){const result=await this.request('login',{method:'POST',data:{password}});this.session=result.session;return '';}
+ async readState(){return this.request('published');}
+ async head(){return '';}
  async publish(document,revision,files){
-  const doc=validateDocument(document,true),head=await this.head(),current=await this.readState(head);
-  if(current.revision!==revision)throw problem('Сайт уже изменён в другой вкладке или на другом устройстве. Экспортируйте черновик и загрузите актуальную версию.',409);
-  const parent=await this.request(this.base+'/git/commits/'+head),updatedAt=new Date().toISOString(),state={revision:revision+1,updatedAt,published:doc};
-  const tree=[];
+  const uploaded=[];
   for(const file of files){
-   if(!/^assets\/media\/[a-zA-Z0-9_-]+\.(webp|png|jpg|gif|avif|mp4|mov|webm|ogg)$/.test(file.path))throw problem('Некорректный путь загруженного файла.',422);
-   const bytes=new Uint8Array(await file.blob.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));const sha=await this.blob(btoa(binary),'base64');
-   for(const path of [file.path,this.prefix+file.path])tree.push({path,mode:'100644',type:'blob',sha});
+   const bytes=new Uint8Array(await file.blob.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));
+   const result=await this.request('upload-blob?path='+encodeURIComponent(file.path),{method:'POST',data:{content:btoa(binary),encoding:'base64'}});uploaded.push({path:file.path,sha:result.sha});
   }
-  const sha=await this.blob(JSON.stringify(state,null,2)+'\n');
-  for(const path of ['data/site-state.json',this.prefix+'data/site-state.json'])tree.push({path,mode:'100644',type:'blob',sha});
-  const createdTree=await this.request(this.base+'/git/trees',{method:'POST',data:{base_tree:parent.tree.sha,tree}});
-  const commit=await this.request(this.base+'/git/commits',{method:'POST',data:{message:`Publish website settings (revision ${state.revision})`,tree:createdTree.sha,parents:[head]}});
-  await this.request(this.base+'/git/refs/heads/'+encodeURIComponent(this.branch),{method:'PATCH',data:{sha:commit.sha,force:false}});
-  return {...state,commit:commit.sha};
+  return this.request('publish',{method:'POST',data:{document,revision,files:uploaded}});
  }
- async history(){
-  const commits=await this.request(this.base+'/commits?path=data%2Fsite-state.json&per_page=11');
-  const results=[];for(let i=0;i<commits.length;i+=3){const batch=await Promise.all(commits.slice(i,i+3).map(async commit=>{try{const state=await this.readState(commit.sha);return {revision:state.revision,updatedAt:state.updatedAt,document:state.published};}catch(error){if(error.status===404)return null;throw error;}}));results.push(...batch.filter(Boolean));}return results;
- }
+ async history(){return this.request('history');}
+ async logout(){try{return await this.request('logout',{method:'POST',data:{}});}finally{this.session='';}}
+ async changePassword(data){try{return await this.request('password',{method:'POST',data});}finally{this.session='';}}
 }
 const dbName=()=>{const s=pagesSettings();return `yumiliya-draft:${s.owner}/${s.repo}`;};
 function database(){return new Promise((resolve,reject)=>{const req=indexedDB.open(dbName(),1);req.onupgradeneeded=()=>{req.result.createObjectStore('state');req.result.createObjectStore('files',{keyPath:'path'});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(new Error('Не удалось открыть хранилище черновика.'));});}
@@ -57,17 +35,18 @@ let client,state,account='',active=false;const revisions=new Map();
 async function files(){return storage('files','getAll');}
 async function restoreAssets(){for(const file of await files())registerPendingAsset(file.path,URL.createObjectURL(file.blob));}
 async function persist(){await storage('state','put',{revision:state.revision,draftVersion:state.draftVersion,draft:state.draft},'draft');}
-function requireSession(){if(!active||!client?.token)throw problem('Войдите с токеном GitHub.',401);}
+function requireSession(){if(!active||!client?.session)throw problem('Войдите с паролем администратора.',401);}
 function detectExtension(bytes){const s=(a,b)=>new TextDecoder().decode(bytes.subarray(a,b));if(bytes[0]===137&&s(1,4)==='PNG')return 'png';if(bytes[0]===255&&bytes[1]===216&&bytes[2]===255)return 'jpg';if(/^GIF8[79]a$/.test(s(0,6)))return 'gif';if(s(0,4)==='RIFF'&&s(8,12)==='WEBP')return 'webp';if(s(4,8)==='ftyp')return /avif|avis/.test(s(8,32))?'avif':/qt  /.test(s(8,32))?'mov':'mp4';if(bytes[0]===26&&bytes[1]===69&&bytes[2]===223&&bytes[3]===163)return 'webm';if(s(0,4)==='OggS')return 'ogg';throw problem('Выберите JPG, PNG, GIF, WEBP, AVIF, MP4, MOV, WEBM или OGG.',415);}
 export async function pagesApi(path,{method='GET',data,raw}={}){
  if(path==='api/login'&&method==='POST'){
-  client=new GithubPublisher(pagesSettings());account=await client.login(data.password);
+  client=new PasswordPublisher(pagesSettings());account=await client.login(data.password);
   const published=await client.readState(await client.head()),saved=await storage('state','get','draft');
-  state={revision:saved?.revision??published.revision,updatedAt:published.updatedAt,draft:saved?.draft||clone(published.published),draftVersion:saved?.draftVersion||0,stale:!!saved&&saved.revision!==published.revision};active=true;await restoreAssets();return {csrf:'github-memory-session'};
+  state={revision:saved?.revision??published.revision,updatedAt:published.updatedAt,draft:saved?.draft||clone(published.published),draftVersion:saved?.draftVersion||0,stale:!!saved&&saved.revision!==published.revision};active=true;await restoreAssets();return {csrf:'password-memory-session'};
  }
  requireSession();
- if(path==='api/logout'){client.token='';active=false;return {ok:true};}
- if(path==='api/admin/state')return {...clone(state),csrf:'github-memory-session',account};
+ if(path==='api/logout'){await client.logout();active=false;return {ok:true};}
+ if(path==='api/admin/password'&&method==='POST'){await client.changePassword(data);active=false;return {ok:true};}
+ if(path==='api/admin/state')return {...clone(state),csrf:'password-memory-session',account};
  if(path==='api/admin/draft'&&method==='PUT'){
   if(data.expectedDraftVersion!==state.draftVersion)throw problem('Черновик изменился. Обновите студию.',409);
   const saved=await storage('state','get','draft');if(saved&&(saved.draftVersion!==state.draftVersion||saved.revision!==state.revision))throw problem('Черновик изменён в другой вкладке. Экспортируйте изменения перед обновлением.',409);

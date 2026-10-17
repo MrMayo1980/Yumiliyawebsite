@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "yumiliya-password-service",
+  "main": "cloudflare/worker.mjs",
+  "compatibility_date": "2026-10-17",
+  "workers_dev": true,
+  "vars": {
+    "ALLOWED_ORIGIN": "https://mrmayo1980.github.io",
+    "GITHUB_OWNER": "MrMayo1980",
+    "GITHUB_REPO": "Yumiliyawebsite",
+    "GITHUB_BRANCH": "main"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "yumiliya-admin-auth",
+      "database_id": "2efcc8d0-ed60-4970-94f0-30110470e215",
+      "migrations_dir": "cloudflare/migrations"
+    }
+  ],
+  "account_id": "827c625b8b546d6640730f29f8e3b17b"
+}

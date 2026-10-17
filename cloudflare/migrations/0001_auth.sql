@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS credentials (id INTEGER PRIMARY KEY CHECK(id=1), value TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS sessions (digest TEXT PRIMARY KEY, credential TEXT NOT NULL, expires INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS sessions_expiry ON sessions(expires);
+CREATE TABLE IF NOT EXISTS attempts (key TEXT PRIMARY KEY, count INTEGER NOT NULL, expires INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS uploads (session TEXT NOT NULL, path TEXT NOT NULL, sha TEXT NOT NULL, expires INTEGER NOT NULL, PRIMARY KEY(session,path));
+CREATE INDEX IF NOT EXISTS uploads_expiry ON uploads(expires);

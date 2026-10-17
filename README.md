@@ -10,13 +10,21 @@ Archive + configurable card gacha, with a GitHub Pages admin and an optional ser
 
 Pages publishes **main → /docs**. `npm run build:pages` creates that public directory from an explicit file allowlist. It includes the archive, game, and admin, with relative paths that work beneath `/Yumiliyawebsite/`. The generated `.nojekyll` disables Jekyll processing. Credentials, server code, tests, private drafts, and unpublished uploads are excluded.
 
-The Pages admin signs in through GitHub, rather than the local server password:
+The Pages admin uses a **shared password** checked by a private Cloudflare Worker. Editors need no GitHub account, GitHub token, or Cloudflare account. The owner's publishing credential and the password hash are stored only in Cloudflare, never in Pages files or browser drafts.
 
-1. Create a **fine-grained personal access token** in GitHub settings.
-2. Select resource owner **MrMayo1980**, repository **Yumiliyawebsite** only, and **Contents: Read and write**. Set an expiration appropriate for your use.
-3. Enter that token in the Pages admin's **Токен доступа GitHub** field. Do not enter your GitHub password.
+One-time owner setup (Cloudflare Workers Free and D1 Free):
 
-The token is sent only to `https://api.github.com`, stays in memory, and is cleared on logout or reload. It is never included in a commit, export, browser draft, or the published website. GitHub verifies repository write access.
+```bash
+npm ci
+npm run cloudflare:login
+npm run cloudflare:deploy
+```
+
+Sign in to the free Cloudflare account in the browser. Deployment creates the D1 authentication database, applies its schema, installs encrypted Worker secrets, deploys the service, checks that anonymous requests are rejected, and builds Pages with its public address. The deployment uses the owner's existing GitHub CLI authorization automatically; it never asks editors to create or paste a token. If that authorization is revoked, the owner must refresh the service's publishing secret. These scripts do not subscribe to a paid plan.
+
+The initial shared password is stored privately in `.data/cloudflare-initial-password.txt`. Share it only with intended editors. Change it in **Доступ** after login. Changing the password revokes all sessions; the new hash persists in D1 across Worker deployments. Re-running deployment does not reset a changed password. The private initial-password file is a record of the first password, not a current-password recovery mechanism.
+
+After deployment, commit and push the reviewed root files, `data/hosting.json`, `wrangler.jsonc`, and generated `/docs` to update GitHub Pages. The hosting JSON contains only the public Worker address. Do not commit `.data`, `.wrangler`, `.dev.vars`, or credentials. The build allows browser connections only to the configured password-service origin. Sessions stay in memory and expire after eight hours; reloading requires signing in again. Login throttling and revocation are stored in D1 rather than in a temporary Worker instance.
 
 Drafts and unpublished uploads are saved in IndexedDB in the current browser. Preview works without publishing. **Опубликовать** creates one GitHub commit containing the public settings and referenced uploaded files in both the repository source and `/docs`. GitHub Pages then rebuilds; allow a few minutes for the public site to update. Existing files outside those changes are preserved, and the branch is never force-pushed. If another editor published a newer revision, the old draft is retained for export instead of overwriting their changes. Use **Копии и история → Загрузить опубликованную версию** to reload the current GitHub version deliberately.
 
@@ -37,7 +45,7 @@ npm start
 - The generated initial password is in `.data/initial-admin-password.txt`. Open it locally, sign in, then change the password under **Доступ**.
 - `npm run setup` generates a new password and replaces the old hash. Restart the server afterwards to invalidate existing sessions. For automated provisioning, setup also accepts an `ADMIN_PASSWORD` environment variable.
 
-Open the local password-based studio through this server. `file://` pages cannot run it. The generated GitHub Pages version uses GitHub access instead of this server API.
+Open the local password-based studio through this server. `file://` pages cannot run it. The generated GitHub Pages version uses the private Cloudflare password service instead of this local server API.
 
 ## Editing
 
@@ -94,5 +102,7 @@ npm test
 ```
 
 Tests cover password verification, authentication/CSRF/origin checks, login throttling, session revocation, private-file protection, draft isolation, publishing/history, stale-edit rejection, uploads, configuration validation, and game behavior driven by custom settings.
+
+Cloudflare deployment uses the documented free-tier limits. The public site stays on GitHub Pages; Worker/D1 outages or exhausted limits can temporarily prevent editing. No paid storage service is required. Uploads are buffered in the editor’s browser until publication; the Worker streams the encoded files to the repository and stores only authentication/upload metadata in D1.
 
 Authentication design references: [Node crypto](https://nodejs.org/api/crypto.html), [OWASP session management](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html).
