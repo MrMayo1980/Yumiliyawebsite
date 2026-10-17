@@ -1,6 +1,6 @@
 {
-  "revision": 1,
-  "updatedAt": "2026-10-17T22:30:03.132Z",
+  "revision": 2,
+  "updatedAt": "2026-10-17T22:45:54.490Z",
   "published": {
     "config": {
       "cols": [
@@ -399,8 +399,8 @@
         "brand": "Юмилия",
         "brandTag": "CONTENT STUDIO",
         "tagline": "ВАША КОЛЛЕКЦИЯ. ВАШИ ПРАВИЛА.",
-        "headline": "Маленький мир,\nкоторый создаёте вы.",
-        "description": "Архив, карточные коллекции и все настройки игры — в одной студии.",
+        "headline": "",
+        "description": "",
         "backLabel": "Открыть сайт ↗",
         "eyebrow": "ДОБРО ПОЖАЛОВАТЬ",
         "heading": "Вход в студию",
