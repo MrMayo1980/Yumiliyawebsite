@@ -1,0 +1,349 @@
+{
+  "cols": [
+    {
+      "id": "mb",
+      "name": "Мэйби Бейби",
+      "enabled": true,
+      "settings": {
+        "price": 160,
+        "sr": 2,
+        "r": 14,
+        "money": 20,
+        "pityR": 50,
+        "pityS": 100,
+        "banner": 0,
+        "bannerRate": 50,
+        "bannerGuarantee": true
+      }
+    },
+    {
+      "id": "kv",
+      "name": "Karna.val",
+      "enabled": true,
+      "settings": {
+        "price": 160,
+        "sr": 2,
+        "r": 14,
+        "money": 20,
+        "pityR": 50,
+        "pityS": 100,
+        "banner": 0,
+        "bannerRate": 50,
+        "bannerGuarantee": true
+      }
+    }
+  ],
+  "cards": [
+    {
+      "id": 1,
+      "col": "mb",
+      "r": "N",
+      "name": "Пляж",
+      "img": "assets/gacha/8fc111987e4b70f595eb.webp",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": 2,
+      "col": "mb",
+      "r": "N",
+      "name": "Бассейн",
+      "img": "assets/gacha/0f7d79dc9b3940087b2c.webp",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": 3,
+      "col": "mb",
+      "r": "N",
+      "name": "Домик",
+      "img": "assets/gacha/f22d9fe5f884cf7baad5.webp",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": 4,
+      "col": "mb",
+      "r": "R",
+      "name": "Небо над домиком",
+      "img": "assets/gacha/9fe8fd284fe08cada5a0.webp",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": 5,
+      "col": "mb",
+      "r": "R",
+      "name": "Баскетбол",
+      "img": "assets/gacha/02053729c6cc54248cb0.webp",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": 6,
+      "col": "mb",
+      "r": "R",
+      "name": "Заплыв",
+      "img": "assets/gacha/0ec851f963090caee930.webp",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": 7,
+      "col": "mb",
+      "r": "SR",
+      "name": "Красная машина",
+      "img": "assets/gacha/24c240745ffdf28311e7.webp",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": 8,
+      "col": "mb",
+      "r": "SR",
+      "name": "Светлая комната",
+      "img": "assets/gacha/c02b67971c7ce6c73aad.webp",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": 9,
+      "col": "mb",
+      "r": "SR",
+      "name": "Вечерний паркет",
+      "img": "assets/gacha/6fd295b71e28a4bf5b6f.webp",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": 10,
+      "col": "kv",
+      "r": "N",
+      "name": "Корсет",
+      "img": "assets/gacha/8fd793ff61ef4cc79753.webp",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": 11,
+      "col": "kv",
+      "r": "N",
+      "name": "Яхта",
+      "img": "assets/gacha/cfa3a9cd538061e8ab07.webp",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": 12,
+      "col": "kv",
+      "r": "N",
+      "name": "Трап",
+      "img": "assets/gacha/36648b996172d3da79fb.webp",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": 13,
+      "col": "kv",
+      "r": "R",
+      "name": "Блеск",
+      "img": "assets/gacha/2f423316fe106a5e6306.webp",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": 14,
+      "col": "kv",
+      "r": "R",
+      "name": "Премия",
+      "img": "assets/gacha/75f71c0ff4b8683495b2.webp",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": 15,
+      "col": "kv",
+      "r": "R",
+      "name": "Награда",
+      "img": "assets/gacha/6da9f2f1b6361b3c4056.webp",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": 16,
+      "col": "kv",
+      "r": "SR",
+      "name": "Кепка",
+      "img": "assets/gacha/cfcbfbb781bf7c6a18ce.webp",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": 17,
+      "col": "kv",
+      "r": "SR",
+      "name": "Крупный план",
+      "img": "assets/gacha/470e2c407ad37e4727f9.webp",
+      "enabled": true,
+      "weight": 1
+    },
+    {
+      "id": 18,
+      "col": "kv",
+      "r": "SR",
+      "name": "Вечер",
+      "img": "assets/gacha/00648162cbdc86d10768.webp",
+      "enabled": true,
+      "weight": 1
+    }
+  ],
+  "back": "assets/gacha/67a69b8b0bd479bbe8c8.webp",
+  "version": 1,
+  "title": "Карточная гача",
+  "economy": {
+    "startingGems": 1600,
+    "startingFree": 0,
+    "dailyFree": 3,
+    "shards": {
+      "N": 1,
+      "R": 5,
+      "SR": 25
+    },
+    "sellPrices": {
+      "N": 20,
+      "R": 60,
+      "SR": 200
+    },
+    "moneyPrizes": [
+      20,
+      30,
+      40,
+      50,
+      60
+    ]
+  },
+  "defaults": {
+    "price": 160,
+    "sr": 2,
+    "r": 14,
+    "money": 20,
+    "pityR": 50,
+    "pityS": 100,
+    "banner": 0,
+    "bannerRate": 50,
+    "bannerGuarantee": true
+  },
+  "mini": {
+    "enabled": true,
+    "baseCost": 10,
+    "costStep": 5,
+    "guaranteeEvery": 5,
+    "guaranteeMin": 80,
+    "prizes": [
+      [
+        10,
+        32
+      ],
+      [
+        20,
+        30
+      ],
+      [
+        40,
+        20
+      ],
+      [
+        80,
+        11
+      ],
+      [
+        200,
+        6
+      ],
+      [
+        500,
+        1
+      ]
+    ]
+  },
+  "game2048": {
+    "enabled": true,
+    "dailyLimit": 100,
+    "rewards": {
+      "64": 2,
+      "128": 4,
+      "256": 8,
+      "512": 15,
+      "1024": 30,
+      "2048": 60
+    }
+  },
+  "effects": {
+    "sound": true,
+    "volume": 1,
+    "flash": true,
+    "vibration": true,
+    "spinSeconds": 5.5,
+    "multiSpinSeconds": 3.2
+  },
+  "theme": {
+    "background": "assets/gacha/46990588f7d6512954f8.jpg",
+    "pill": "assets/gacha/1462ff2730948ce59934.webp",
+    "button": "assets/gacha/bd6af125bfb49e54cfaf.webp",
+    "bg": "#030b2a",
+    "panel": "#0a2a6e",
+    "line": "#7fb4ff",
+    "text": "#eaf3ff",
+    "muted": "#a3c0ee",
+    "accent": "#ff5fa8",
+    "N": "#c9d6ee",
+    "R": "#43b0ff",
+    "SR": "#ffc13b",
+    "font": "Philosopher",
+    "maxWidth": 1000,
+    "cardRadius": 12
+  },
+  "labels": {
+    "summon": "Призыв",
+    "collection": "Коллекция",
+    "game2048": "2048",
+    "help": "Справка",
+    "pull": "Крутить",
+    "again": "Крутить ещё",
+    "close": "Закрыть",
+    "skip": "Пропустить",
+    "dailyBonus": "Ежедневный бонус",
+    "collectionDone": "Коллекция собрана",
+    "mini": "Рулетка осколков"
+  },
+  "help": [
+    {
+      "title": "🎴 Как играть",
+      "body": "Собирайте карточки, выбирайте коллекции и открывайте новые карты. Стоимость крутки: {{price}} 💎. Денежные призы и дубликаты пополняют баланс."
+    },
+    {
+      "title": "🎟 Ежедневный бонус",
+      "body": "Каждый день вы получаете {{dailyFree}} бесплатных круток. Стартовый баланс нового игрока: {{startingGems}} 💎. Бесплатные крутки тратятся первыми."
+    },
+    {
+      "title": "⭐ Шансы и гаранты",
+      "body": "В выбранной коллекции: SR — {{sr}}%, R — {{r}}%, деньги — {{money}}%. Гарант R+ — {{pityR}} круток, SR — {{pityS}}. Значение 0 отключает гарант. Шанс баннерной SR — {{bannerRate}}%."
+    },
+    {
+      "title": "📚 Коллекции и дубликаты",
+      "body": "Коллекции выбираются в меню ☰. Дубликаты дают осколки; лишние копии можно продать в альбоме. Полностью собранная коллекция остаётся в альбоме."
+    },
+    {
+      "title": "🎰 Рулетка осколков",
+      "body": "Начальная цена: {{miniBase}} ✦. Каждая следующая крутка дороже на {{miniStep}} ✦; цена сбрасывается ежедневно. Гарант: каждый {{miniGuarantee}}-й приз не меньше {{miniMin}} 💎 (0 отключает гарант)."
+    },
+    {
+      "title": "🔢 2048",
+      "body": "Свайпайте или используйте стрелки. Одинаковые плитки складываются. Дневной лимит наград: {{dailyLimit}} 💎. Текущие награды указаны под полем."
+    },
+    {
+      "title": "💾 Сохранение и резервная копия",
+      "body": "Прогресс сохраняется в этом браузере. Кнопка 💾 позволяет скачать или скопировать резервную копию и восстановить её на другом устройстве."
+    }
+  ]
+}

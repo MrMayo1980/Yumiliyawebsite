@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Юмилия — Галерея</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
+<title>Юмилия — Архив и гача</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Montserrat:wght@300;400&family=Philosopher:wght@400;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -40,6 +40,18 @@ h1{
 }
 .subtitle{font-size:0.6rem;letter-spacing:0.35em;text-transform:uppercase;color:var(--muted);margin-bottom:1.5rem;}
 .divider{width:1px;height:40px;background:linear-gradient(to bottom,var(--pink),transparent);margin:0 auto 2rem;}
+[hidden]{display:none!important;}
+.site-nav{display:flex;justify-content:center;gap:0.5rem;margin:0 auto 2rem;}
+.site-nav a{border:1px solid var(--border);border-radius:100px;padding:0.7rem 1.5rem;color:var(--muted);font-size:0.7rem;letter-spacing:0.15em;text-decoration:none;text-transform:uppercase;transition:background 0.25s,color 0.25s;}
+.site-nav a[aria-current="page"]{background:var(--pink);border-color:var(--pink);color:#fff;}
+.site-nav a:hover{color:var(--text);}
+.site-nav a:focus-visible,.filter-pill button:focus-visible{outline:2px solid var(--text);outline-offset:4px;}
+body[data-section="gacha"] header{padding-top:1.25rem;}
+body[data-section="gacha"] h1{font-size:2.8rem;}
+body[data-section="gacha"] .subtitle,body[data-section="gacha"] .divider{display:none;}
+body[data-section="gacha"] .site-nav{margin:1rem auto;}
+body[data-section="gacha"] main{max-width:none;padding:0;}
+#gacha-frame{display:block;width:100%;height:calc(100vh - var(--site-header-height,160px));height:calc(100svh - var(--site-header-height,160px));min-height:360px;border:0;background:#030b2a;}
 .filter-pill{
   display:flex;align-items:center;
   background:rgba(255,255,255,0.04);
@@ -86,127 +98,46 @@ main{max-width:1400px;margin:0 auto;padding:0 1rem 4rem;}
 #lightbox-close:hover{color:var(--pink);border-color:var(--pink);}
 footer{text-align:center;padding:2rem;font-size:0.58rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);border-top:1px solid var(--border);}
 </style>
+<link rel="stylesheet" href="site.css">
 </head>
-<body>
+<body data-section="archives">
 <header>
   <div class="title-row">
     <div class="tline"></div>
     <h1>Юмилия</h1>
     <div class="tline r"></div>
   </div>
-  <p class="subtitle">Галерея контента &nbsp;·&nbsp; Избранное</p>
+  <p class="subtitle">Архив контента &nbsp;·&nbsp; Карточная гача</p>
   <div class="divider"></div>
-  <div class="filter-pill">
+  <nav class="site-nav" aria-label="Разделы сайта">
+    <a id="archives-link" href="#archives" aria-current="page" aria-controls="archives-panel">Архив</a>
+    <a id="gacha-link" href="#gacha" aria-controls="gacha-panel">Гача</a>
+    <a id="admin-link" href="admin.html">Админ</a>
+  </nav>
+</header>
+<main>
+  <section id="archives-panel" aria-label="Архив контента">
+  <div class="filter-pill" role="group" aria-label="Тип контента">
     <button class="active" data-filter="all">Все</button>
     <button data-filter="image">Фото</button>
     <button data-filter="gif">GIF</button>
     <button data-filter="video">Видео</button>
   </div>
-</header>
-<main>
   <div id="loading">Загрузка — —</div>
   <div id="empty"><div class="flower">🌸</div><p>Фотографии появятся здесь</p></div>
+  <p id="gallery-error" hidden role="status" style="text-align:center;color:var(--muted);padding:1rem">Часть архива временно недоступна. <button id="retry-gallery" type="button">Повторить загрузку</button></p>
   <div id="gallery"></div>
+  </section>
+  <section id="gacha-panel" aria-label="Карточная гача" hidden>
+    <iframe id="gacha-frame" title="Карточная гача — Юмилия" data-src="gacha_game.html"></iframe>
+  </section>
 </main>
 <div id="lightbox">
   <button id="lightbox-close">✕ закрыть</button>
-  <img id="lightbox-img" style="display:none" oncontextmenu="return false" draggable="false">
+  <img id="lightbox-img" style="display:none" draggable="false">
   <video id="lightbox-vid" controls style="display:none"><source id="lightbox-vid-src" src="" type="video/mp4"></video>
 </div>
 <footer>🌸 &nbsp; Юмилия · Все права защищены</footer>
-<script>
-const CLOUD_NAME = 'dflgldw4j';
-const FOLDER = 'gallery';
-
-let allItems = [];
-let activeFilter = 'all';
-
-document.addEventListener('contextmenu', e => e.preventDefault());
-document.addEventListener('dragstart', e => e.preventDefault());
-
-async function fetchMedia() {
-  document.getElementById('loading').style.display = 'block';
-  const seenUrls = new Set();
-  const deletedUrls = new Set();
-  const merged = [];
-  let misses = 0;
-  for (let v = 1; v <= 999; v++) {
-    const vStr = String(v).padStart(3, '0');
-    try {
-      const resp = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/${FOLDER}/manifest_${vStr}.json?t=${Date.now()}`);
-      if (resp.ok) {
-        misses = 0;
-        const data = await resp.json();
-        for (const url of (data.deleted||[])) deletedUrls.add(url);
-        for (const item of (data.items || [])) {
-          if (!seenUrls.has(item.url)) { seenUrls.add(item.url); merged.push(item); }
-        }
-      } else {
-        misses++;
-        if (misses >= 3) break;
-      }
-    } catch(e) { misses++; if (misses >= 3) break; }
-  }
-  document.getElementById('loading').style.display = 'none';
-  const finalItems = merged.filter(i => !deletedUrls.has(i.url));
-  if (finalItems.length === 0) { document.getElementById('empty').classList.add('visible'); return; }
-  allItems = finalItems;
-  render();
-}
-
-function getType(item) {
-  if (item.type) return item.type;
-  const url = item.url || '';
-  if (url.match(/\.gif$/i)) return 'gif';
-  if (url.match(/\.(mp4|webm|mov)$/i)) return 'video';
-  return 'image';
-}
-
-function render() {
-  document.getElementById('loading').style.display = 'none';
-  const gallery = document.getElementById('gallery');
-  const empty = document.getElementById('empty');
-  const filtered = activeFilter === 'all' ? allItems : allItems.filter(i => getType(i) === activeFilter);
-  if (!filtered.length) { gallery.innerHTML = ''; empty.classList.add('visible'); return; }
-  empty.classList.remove('visible');
-  gallery.innerHTML = '';
-  filtered.forEach(item => {
-    const type = getType(item);
-    const div = document.createElement('div');
-    div.className = 'item';
-    const mediaEl = type === 'video'
-      ? `<video src="${item.url}" muted loop autoplay playsinline></video>`
-      : `<img src="${item.url}" alt="" loading="lazy" draggable="false" oncontextmenu="return false">`;
-    div.innerHTML = `${mediaEl}${type==='gif'?'<div class="gif-badge">GIF</div>':''}<div class="overlay"></div>`;
-    div.addEventListener('click', () => openLightbox(item.url, type));
-    gallery.appendChild(div);
-  });
-}
-
-function openLightbox(url, type) {
-  const img = document.getElementById('lightbox-img');
-  const vid = document.getElementById('lightbox-vid');
-  img.style.display = 'none'; vid.style.display = 'none';
-  if (type === 'video') { document.getElementById('lightbox-vid-src').src = url; vid.load(); vid.style.display = 'block'; }
-  else { img.src = url; img.style.display = 'block'; }
-  document.getElementById('lightbox').classList.add('open');
-}
-
-const closeLB = () => { document.getElementById('lightbox').classList.remove('open'); document.getElementById('lightbox-vid').pause(); };
-document.getElementById('lightbox-close').addEventListener('click', closeLB);
-document.getElementById('lightbox').addEventListener('click', e => { if (e.target === document.getElementById('lightbox')) closeLB(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLB(); });
-
-document.querySelectorAll('.filter-pill button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.filter-pill button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    activeFilter = btn.dataset.filter;
-    render();
-  });
-});
-
-fetchMedia();
-</script>
+<script type="module" src="index.js"></script>
 </body>
 </html>

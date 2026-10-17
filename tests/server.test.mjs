@@ -1,0 +1,56 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtemp,mkdir,writeFile,readFile,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join,resolve} from 'node:path';
+import {createServer} from 'node:http';
+import {createApp} from '../server/app.mjs';
+import {hashPassword,verifyPassword} from '../server/auth.mjs';
+import {validateDocument} from '../server/schema.mjs';
+import {DEFAULT_APPEARANCE} from '../appearance.js';
+const root=resolve(import.meta.dirname,'..');
+const password='test-only-password-7319!';
+const config=JSON.parse(await readFile(join(root,'data/gacha.json'),'utf8'));
+const doc={config,gallery:{items:[],deleted:[]}};
+test('password hash uses a salt, verifies correct passwords, rejects wrong passwords',async()=>{const a=await hashPassword(password),b=await hashPassword(password);assert.notEqual(a.salt,b.salt);assert.equal(await verifyPassword(password,a),true);assert.equal(await verifyPassword('wrong',a),false);assert.ok(!JSON.stringify(a).includes(password));});
+test('configuration validation rejects broken probabilities, IDs, scripts, and impossible guarantees',()=>{
+ assert.doesNotThrow(()=>validateDocument(doc,true));
+ for(const change of [d=>d.config.cols[0].settings.sr=99,d=>d.config.cards[1].id=d.config.cards[0].id,d=>d.config.cards[0].img='javascript:alert(1)',d=>d.config.theme.background='data:text/html,<script>x</script>',d=>d.config.mini.guaranteeMin=999999,d=>d.config.game2048.rewards={'3':10}]){const d=structuredClone(doc);change(d);assert.throws(()=>validateDocument(d,true));}
+ const incomplete=structuredClone(doc);incomplete.config.cards=incomplete.config.cards.filter(c=>c.col!==incomplete.config.cols[0].id);assert.doesNotThrow(()=>validateDocument(incomplete));assert.throws(()=>validateDocument(incomplete,true));
+});
+test('protected server: login, CSRF, draft isolation, publish, history, upload, secret files, logout and persistence',async t=>{
+ const dir=await mkdtemp(join(tmpdir(),'yumiliya-test-'));await mkdir(join(dir,'data'));await writeFile(join(dir,'data/gacha.json'),JSON.stringify(config));await writeFile(join(dir,'admin.html'),'<html>Studio</html>');const privateDir=join(dir,'.data');await mkdir(privateDir);await writeFile(join(privateDir,'credentials.json'),JSON.stringify(await hashPassword(password)));
+ const server=createServer(await createApp({root:dir,dataDir:privateDir}));await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin=`http://127.0.0.1:${server.address().port}`;let cookie='',csrf='';
+ t.after(async()=>{await new Promise(r=>server.close(r));await rm(dir,{recursive:true,force:true});});
+ const request=async(path,method='GET',data,opts={})=>{const headers={...(method!=='GET'?{Origin:origin}:{}),...(cookie?{Cookie:cookie}:{}),...(csrf?{'X-CSRF-Token':csrf}:{}),...opts.headers};if(data!==undefined&&!opts.raw)headers['Content-Type']='application/json';const res=await fetch(origin+path,{method,headers,body:data===undefined?undefined:opts.raw?data:JSON.stringify(data),redirect:'manual'});const text=await res.text();let body;try{body=JSON.parse(text);}catch{body=text;}return {res,body};};
+ assert.equal((await request('/api/admin/state')).res.status,401);
+ assert.equal((await request('/api/admin/appearance')).res.status,401);assert.equal((await request('/api/admin/gallery')).res.status,401);assert.deepEqual((await request('/api/appearance')).body,DEFAULT_APPEARANCE);
+ for(const path of ['/.data/credentials.json','/.data/initial-admin-password.txt','/.git/config','/server/app.mjs','/package.json','/../.data/credentials.json','/%2e%2e/.data/credentials.json'])assert.equal((await request(path)).res.status,404,path);
+ assert.equal((await request('/api/admin/draft','PUT',{document:doc,expectedDraftVersion:0})).res.status,401);
+ assert.equal((await request('/api/login','POST',{password:'wrong'})).res.status,401);
+ assert.equal((await request('/api/login','POST',{password},{headers:{Origin:'https://evil.example'}})).res.status,403);
+ const login=await request('/api/login','POST',{password});assert.equal(login.res.status,200);cookie=login.res.headers.get('set-cookie').split(';')[0];assert.match(login.res.headers.get('set-cookie'),/HttpOnly/);assert.match(login.res.headers.get('set-cookie'),/SameSite=Strict/);csrf=login.body.csrf;
+ assert.ok(!JSON.stringify(login.body).includes(password));const snapshot=(await request('/api/admin/state')).body;assert.equal(snapshot.revision,0);
+ const changed=structuredClone(doc);changed.config.title='Changed in draft';changed.config.economy.dailyFree=9;changed.appearance=structuredClone(DEFAULT_APPEARANCE);changed.appearance.site.name='Draft website';changed.appearance.login.heading='Draft login';
+ assert.equal((await request('/api/admin/draft','PUT',{document:changed,expectedDraftVersion:0},{headers:{'X-CSRF-Token':'wrong'}})).res.status,403);
+ assert.equal((await request('/api/admin/draft','PUT',{document:changed,expectedDraftVersion:0},{headers:{Origin:'https://evil.example'}})).res.status,403);
+ assert.equal((await request('/api/admin/draft','PUT',{document:changed,expectedDraftVersion:0})).res.status,200);
+ assert.equal((await request('/api/appearance')).body.site.name,DEFAULT_APPEARANCE.site.name);assert.equal((await request('/api/admin/appearance')).body.site.name,'Draft website');assert.equal((await request('/api/admin/appearance')).body.login.heading,'Draft login');
+ assert.equal((await request('/api/gacha')).body.title,config.title);assert.equal((await request('/api/admin/preview')).body.title,'Changed in draft');
+ assert.equal((await request('/api/admin/draft','PUT',{document:doc,expectedDraftVersion:0})).res.status,409);
+ assert.equal((await request('/api/admin/publish','POST',{expectedRevision:0,expectedDraftVersion:0})).res.status,409);
+ assert.equal((await request('/api/admin/publish','POST',{expectedRevision:0,expectedDraftVersion:1})).res.status,200);
+ assert.equal((await request('/api/appearance')).body.site.name,'Draft website');assert.equal((await request('/api/appearance')).body.login.heading,'Draft login');assert.equal((await request('/api/gacha')).body.title,'Changed in draft');assert.equal((await request('/api/admin/history')).body.length,1);assert.equal((await request('/api/admin/history/0')).body.document.config.title,config.title);
+ const invalid=structuredClone(changed);invalid.config.cols[0].settings.r=100;assert.equal((await request('/api/admin/draft','PUT',{document:invalid,expectedDraftVersion:1})).res.status,422);
+ assert.equal((await request('/api/admin/upload','POST',Buffer.from('<html>bad</html>'),{raw:true})).res.status,415);
+ const bytes=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aCbcAAAAASUVORK5CYII=','base64');const uploaded=await request('/api/admin/upload','POST',bytes,{raw:true});assert.equal(uploaded.res.status,201);const file=await request('/'+uploaded.body.url);assert.equal(file.res.status,200);assert.equal(file.res.headers.get('content-type'),'image/png');
+ const stored=JSON.parse(await readFile(join(privateDir,'state.json'),'utf8'));assert.equal(stored.published.config.title,'Changed in draft');assert.ok(!JSON.stringify(stored).includes(password));
+ assert.equal((await request('/api/logout','POST')).res.status,200);assert.equal((await request('/api/admin/state')).res.status,401);assert.equal((await request('/api/admin/preview')).res.status,401);
+});
+test('password changes revoke all sessions and login attempts are rate limited',async t=>{
+ const dir=await mkdtemp(join(tmpdir(),'yumiliya-auth-'));await mkdir(join(dir,'data'));await writeFile(join(dir,'data/gacha.json'),JSON.stringify(config));await mkdir(join(dir,'.data'));await writeFile(join(dir,'.data/credentials.json'),JSON.stringify(await hashPassword(password)));
+ const server=createServer(await createApp({root:dir}));await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin=`http://127.0.0.1:${server.address().port}`;t.after(async()=>{await new Promise(r=>server.close(r));await rm(dir,{recursive:true,force:true});});
+ const login=()=>fetch(origin+'/api/login',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({password})});const a=await login(),b=await login(),token=(await a.json()).csrf;const cookies=a.headers.get('set-cookie').split(';')[0],other=b.headers.get('set-cookie').split(';')[0];
+ const res=await fetch(origin+'/api/admin/password',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json',Cookie:cookies,'X-CSRF-Token':token},body:JSON.stringify({currentPassword:password,newPassword:'a-different-test-password!123'})});assert.equal(res.status,200);assert.equal((await fetch(origin+'/api/admin/state',{headers:{Cookie:other}})).status,401);
+ for(let i=0;i<8;i++)assert.equal((await login()).status,401);assert.equal((await login()).status,429);
+});

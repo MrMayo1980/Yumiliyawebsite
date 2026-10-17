@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Карточная гача</title>
+<link href="https://fonts.googleapis.com/css2?family=Philosopher:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#0b0d1a;--panel:#171a30;--line:#2a2f52;--tx:#eef0ff;--mut:#8f95c0;--sr:#ffc13b;--r:#43b0ff;--n:#b9c0d8;--acc:#ff5fa8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+.app{max-width:520px;margin:0 auto;padding:12px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.gems{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:6px 14px;font-weight:700}
+button{font:inherit;color:inherit;border:0;cursor:pointer}
+.btn{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 14px}
+.btn.main{background:linear-gradient(135deg,#ff5fa8,#ff8a4c);border:0;font-weight:700}
+.btn:disabled{opacity:.4}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tabs button{flex:1;padding:10px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
+.tabs button.on{background:var(--line);font-weight:700}
+.cols{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto}.cols button{white-space:nowrap;padding:8px 14px;border-radius:20px;background:var(--panel);border:1px solid var(--line)}.cols button.on{border-color:var(--acc);background:#2a1d38;font-weight:700}.cols button:disabled{opacity:.45}
+.card{position:relative;aspect-ratio:2/3}
+.card img{width:100%;height:100%;display:block;object-fit:contain}
+.ban{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:10px}
+.ban .chip{width:64px;opacity:.5;border:2px solid transparent;border-radius:12px;padding:0;background:none}
+.ban .chip.on{opacity:1;border-color:var(--sr)}
+.hero{width:48%;margin:0 auto 12px;filter:drop-shadow(0 0 14px rgba(255,193,59,.55))}
+.bar{height:8px;border-radius:6px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%}
+.row{display:flex;justify-content:space-between;font-size:13px;color:var(--mut);margin:8px 0 4px}
+.pulls{display:flex;gap:10px;margin-top:14px}.pulls .btn{flex:1;padding:14px 8px}
+.pulls small{display:block;font-weight:400;opacity:.85}
+.info{font-size:12.5px;color:var(--mut);margin-top:12px;background:var(--panel);border-radius:12px;padding:10px 12px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cell{position:relative;border-radius:12px;padding:0;background:none}
+.cell.R img{filter:drop-shadow(0 0 4px var(--r))}.cell.SR img{filter:drop-shadow(0 0 5px var(--sr))}
+.cell.lock img{filter:brightness(.12) grayscale(1)}
+.cnt{position:absolute;right:6px;bottom:6px;background:#000c;border-radius:10px;padding:1px 8px;font-size:12px}
+.ov{position:fixed;inset:0;background:#05060fee;z-index:20;display:none;flex-direction:column;padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px));overflow:auto}
+.ov.show{display:flex}
+.res{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:auto 0;width:100%;max-width:520px;align-self:center}
+.res.one{grid-template-columns:1fr;max-width:260px}
+.tile{perspective:700px;aspect-ratio:2/3;cursor:pointer;position:relative}
+.in{position:absolute;inset:0;transition:transform .6s;transform-style:preserve-3d}
+.tile.flip .in{transform:rotateY(180deg)}
+.f,.b{position:absolute;inset:0;backface-visibility:hidden}
+.b{background:center/contain no-repeat}
+.f{transform:rotateY(180deg)}.f img{width:100%;height:100%;object-fit:contain}
+.tile.flip.SR .in{animation:pop .7s}.tile.flip.SR .f img{filter:drop-shadow(0 0 8px var(--sr))}
+.tile.flip.R .f img{filter:drop-shadow(0 0 6px var(--r))}
+@keyframes pop{50%{transform:rotateY(180deg) scale(1.12)}}
+.coin{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(#4a3b12,#1d1a2e);font-size:26px;border:2px solid var(--sr);border-radius:8px;line-height:1.2}.coin b{font-size:17px}.coin span{font-size:15px}
+#flash{position:fixed;inset:0;background:radial-gradient(circle,#fff6c9bb,#ffc13b55 50%,transparent 75%);opacity:0;pointer-events:none;z-index:25}#flash.go{animation:fl .9s}@keyframes fl{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+.stage{margin:auto 0;width:100%}
+.rwrap{position:relative;overflow:hidden;height:176px;background:#0006;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.mark{position:absolute;left:50%;top:0;bottom:0;width:3px;margin-left:-1.5px;background:var(--sr);box-shadow:0 0 10px var(--sr);z-index:3}
+.mark:before{content:'';position:absolute;top:0;left:-6px;border:7px solid transparent;border-top-color:var(--sr)}
+.strip{position:absolute;left:0;top:8px;display:flex;gap:6px;will-change:transform}
+.it{flex:0 0 104px;height:160px;border-bottom:4px solid var(--n);border-radius:4px;background:#0b0d1a;display:flex;align-items:center;justify-content:center}
+.it.R{border-color:var(--r)}.it.SR{border-color:var(--sr)}.it.M{border-color:#6fd16f}
+.it img{width:100%;height:100%;object-fit:contain}
+.it.win{outline:2px solid #fff8;filter:brightness(1.15)}
+.coin2{display:flex;flex-direction:column;align-items:center;font-size:30px;line-height:1.1}.coin2 b{font-size:15px}
+.rres{text-align:center;margin-top:14px;min-height:300px}
+.big{width:190px;margin:0 auto;animation:bigin .5s}@keyframes bigin{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+.big img{width:100%;display:block}.big.SR img{filter:drop-shadow(0 0 14px var(--sr))}.big.R img{filter:drop-shadow(0 0 10px var(--r))}
+.rline{margin-top:10px;font-size:16px}.tag2{background:var(--acc);border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;margin-left:6px}
+.cnt2{color:var(--mut);font-size:13px;margin-bottom:6px}
+.tag{position:absolute;top:3px;left:3px;background:var(--acc);font-size:10px;font-weight:700;border-radius:6px;padding:0 5px;z-index:2}
+.sh{position:absolute;bottom:3px;left:3px;background:#000b;font-size:10px;border-radius:6px;padding:0 5px;z-index:2}
+.acts{display:flex;gap:8px;justify-content:center;margin-top:12px}
+.modal{margin:auto;text-align:center;max-width:300px}
+.modal .card{margin-bottom:10px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);padding:8px 16px;border-radius:20px;z-index:30;display:none}
+/* ===== crystal theme ===== */
+:root{--bg:#030b2a;--panel:#0a2a6e88;--line:#7fb4ff66;--tx:#eaf3ff;--mut:#a3c0ee;--n:#c9d6ee}
+html{background:#030b2a}
+body{background:transparent;font-family:'Philosopher',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:16px}
+body::before{content:'';position:fixed;inset:0;background:url(assets/gacha/46990588f7d6512954f8.jpg) center top/cover no-repeat;z-index:-1}
+.app{position:relative}
+.top{gap:8px;margin-bottom:12px;align-items:center}
+.pill{position:relative;flex:1;aspect-ratio:1617/557;background:url(assets/gacha/1462ff2730948ce59934.webp) center/100% 100% no-repeat;container-type:inline-size;filter:drop-shadow(0 2px 6px #0b2a8f88)}
+.pill .ic{position:absolute;left:17.5%;top:51%;transform:translate(-50%,-50%);font-size:18px;font-size:9cqw;line-height:1}
+.pill b{position:absolute;left:31.4%;width:59.4%;top:50%;transform:translateY(-52%);text-align:center;font-size:17px;font-size:10cqw;color:#fff;text-shadow:0 1px 3px #001a66}
+.plate{flex:none;width:100%;max-width:420px;margin:0 auto 4px;display:block}
+.plate .ic{font-size:6cqw;font-weight:700;color:#fff;text-shadow:0 1px 3px #001a66}.plate b{font-size:5.6cqw}
+.mute{flex:none;width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#4aa6ff,#0b3a9c);border:2px solid #cfe3ff;font-size:18px;padding:0}
+.btn{background:linear-gradient(#2f6fd6,#123f99);border:1px solid #bcd7ff;border-radius:14px;box-shadow:inset 0 1px 0 #fff6,0 0 10px #1e5bd155;color:#fff;text-shadow:0 1px 2px #001a66}
+.btn.main{background:linear-gradient(#45d0ff,#1565e6)}
+.tabs button,.cols button{background:linear-gradient(#1f55b8,#0c2f78);border:1px solid #9fc4ff88;color:#dbe9ff;border-radius:14px;text-shadow:0 1px 2px #001a66}
+.tabs button.on,.cols button.on{background:linear-gradient(#52d4ff,#1a6df0);border-color:#e6f3ff;color:#fff;font-weight:700;box-shadow:0 0 14px #4cc3ffaa}
+.info{background:rgba(6,26,84,.6);border:1px solid #6ea7ff55;backdrop-filter:blur(4px);color:#b9d0f5}
+.bar{height:10px;background:#031447;border:1px solid #7fb4ff77;border-radius:8px}.bar.tall{height:14px;margin:8px 4px 6px}
+.pulls{justify-content:center;margin-top:10px}
+.cta{background:url(assets/gacha/bd6af125bfb49e54cfaf.webp) center/100% 100% no-repeat;border:0;width:84%;aspect-ratio:1625/534;color:#fff;font:700 21px/1.1 'Philosopher',system-ui,sans-serif;text-shadow:0 2px 4px #001a66;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 10%;filter:drop-shadow(0 4px 12px #0b3fbf99)}
+.cta small{display:block;font-size:14px;font-weight:400;opacity:.95}.cta:active{transform:scale(.97)}.cta:disabled{filter:grayscale(.8) brightness(.7)}
+.acts{align-items:center}
+.grid{gap:12px 10px}
+.cell{padding:0;background:none;border:0}
+.cell.lock{background:linear-gradient(#0c2e78bb,#061a4ad0);border:2px solid #b4cff5;border-radius:12px;padding:6px;box-shadow:inset 0 0 16px #2b7bff77,0 0 8px #2b7bff44}
+.cell.lock img{filter:none;opacity:.35}
+.cnt{right:-4px;top:-6px;bottom:auto;width:28px;height:28px;display:flex;align-items:center;justify-content:center;padding:0;border-radius:0;clip-path:polygon(30% 0,70% 0,100% 30%,100% 70%,70% 100%,30% 100%,0 70%,0 30%);background:linear-gradient(#fff,#b8cdee);color:#0a1f5c;font-weight:700;font-size:14px;z-index:2}
+.filt{display:flex;margin:16px auto 0;max-width:340px;border:2px solid #b4cff5;border-radius:16px;overflow:hidden;background:linear-gradient(#0c2e78cc,#061a4acc)}
+.filt button{flex:1;padding:10px;background:none;color:#cfe0ff;font-weight:700;border-right:1px solid #7fb4ff44;display:flex;justify-content:center;align-items:center}
+.filt button:last-child{border-right:0}.filt button.on{background:linear-gradient(#3d9dff66,#1a6df066);box-shadow:inset 0 0 12px #4cc3ff}
+.g{display:inline-block;width:16px;height:16px;transform:rotate(45deg);border-radius:3px}.filt button[data-f=N]{color:#dfe8f8}.filt button[data-f=R]{color:#7fd0ff}.filt button[data-f=SR]{color:#ffd36a}
+.g.n{background:linear-gradient(135deg,#fff,#aab9d6)}.g.r{background:linear-gradient(135deg,#9fe3ff,#1d7bff)}.g.s{background:linear-gradient(135deg,#fff0a0,#ff9d00)}
+.ov{background:radial-gradient(ellipse at 50% -10%,#1b5ee8,#05154d 55%,#02081f 100%)}
+.ov::before{content:'';position:absolute;left:50%;top:0;width:200px;margin-left:-100px;height:60%;background:linear-gradient(#9fd8ffcc,transparent);filter:blur(22px);opacity:.55;pointer-events:none}
+.rwrap{background:linear-gradient(#0a2d86aa,#04174fcc);border-top:3px solid #dbeaff;border-bottom:3px solid #dbeaff;box-shadow:0 0 28px #2d86ffaa,inset 0 0 30px #0a3cc577}
+.it{background:linear-gradient(#0a2a78,#05164b)}
+#sellall{font-size:14px;padding:9px 6px}
+.tabs button{white-space:nowrap;padding:10px 4px;font-size:15px}#conv{font-size:18px;white-space:nowrap;padding:0 12%}#again{font-size:19px}
+
+.help details{background:rgba(6,26,84,.6);border:1px solid #6ea7ff55;border-radius:14px;margin-bottom:8px;backdrop-filter:blur(4px)}
+.help summary{padding:13px 14px;font-weight:700;cursor:pointer;list-style:none;color:#fff;text-shadow:0 1px 2px #001a66}
+.help summary::-webkit-details-marker{display:none}.help summary::after{content:'▾';float:right;opacity:.7}.help details[open] summary::after{content:'▴'}
+.help .hb{padding:0 14px 12px;color:#cfe0ff;font-size:14.5px;line-height:1.5}.help ul{margin:4px 0;padding-left:18px}.help li{margin:3px 0}
+
+.app,.stage,.res,#obal,.ov .acts,.drp,#dm,.toast{zoom:var(--z,1)}
+.colbtn{display:flex;align-items:center;gap:8px;width:100%;margin-bottom:10px;padding:11px 14px;font-size:17px}.colbtn b{flex:1;text-align:left}.colbtn small{opacity:.85;font-size:14px}
+.cta.sm{font-size:17px}
+.dr{position:fixed;inset:0;z-index:40;pointer-events:none}
+.drbg{position:absolute;inset:0;background:#000b;opacity:0;transition:opacity .25s}
+.drp{position:absolute;left:0;top:0;bottom:0;width:min(86%,340px);transform:translateX(-102%);transition:transform .28s;padding:calc(18px + env(safe-area-inset-top,0px)) 14px 14px;background:linear-gradient(#0b2f86,#04174f);border-right:2px solid #b4cff5;box-shadow:8px 0 30px #000b;overflow:auto}
+.dr.open{pointer-events:auto}.dr.open .drbg{opacity:1}.dr.open .drp{transform:none}
+.drh{font-size:21px;font-weight:700;margin-bottom:12px;text-shadow:0 1px 3px #001a66}
+.dc{display:block;width:100%;text-align:left;border:1px solid #9fc4ff88;border-radius:14px;padding:10px 12px;margin-bottom:10px;background:linear-gradient(#1f55b8,#0c2f78);color:#fff}
+.dc b{display:block;font-size:17px}.dc .bar{height:8px;margin-top:8px}
+.dc.sel{border-color:#ffd36a;box-shadow:0 0 12px #ffd36a77}.dc.done{opacity:.55;filter:grayscale(.5)}
+.drn{font-size:13px;margin-top:6px}
+.app{max-width:calc(var(--mw,520)*1px)}
+.hero{width:min(46%,230px)}
+.toast{bottom:auto;top:calc(76px + env(safe-area-inset-top,0px))}
+.pulls .cta{width:min(84%,440px)}
+.grid{grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
+@media (min-aspect-ratio:11/10){
+ #v1{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:18px;align-items:start}
+ #v1>*{grid-column:2}
+ #v1>.ban{grid-column:1;grid-row:1}
+ #v1>.hero{grid-column:1;grid-row:2/span 5}
+}
+.dc .cv{float:left;width:44px;height:66px;object-fit:contain;margin-right:10px}.dc .dd{font-size:13px;opacity:.85;margin:2px 0}.dc::after{content:'';display:block;clear:both}
+.bkm{margin:auto;width:100%;max-width:460px;background:linear-gradient(#0b2f86,#04174f);border:2px solid #b4cff5;border-radius:16px;padding:16px;zoom:var(--z,1)}
+.bkm h3{margin:0 0 8px}.bkm textarea{width:100%;background:#031447;color:#fff;border:1px solid var(--line);border-radius:10px;padding:8px;font:12px/1.3 monospace;margin:8px 0;resize:vertical}
+.bkm .row{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
+.tabs button{font-size:14px;padding:10px 2px}
+.g48top{display:flex;gap:8px;align-items:stretch;margin-bottom:6px}.g48top .sc{flex:1;background:rgba(6,26,84,.65);border:1px solid #6ea7ff66;border-radius:12px;padding:6px 10px;text-align:center}.g48top .sc small{display:block;color:var(--mut);font-size:12px}.g48top .sc b{font-size:22px}
+.g48{position:relative;width:min(100%,420px);aspect-ratio:1;margin:12px auto;background:#04164f;border:2px solid #b4cff5;border-radius:16px;touch-action:none;user-select:none;-webkit-user-select:none;box-shadow:inset 0 0 20px #2b7bff66}
+.g48bg,.g48t{position:absolute;inset:8px}.g48bg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.g48bg i{background:#0c2e78;border-radius:10px}
+.g48t{container-type:size}
+.t48{position:absolute;left:0;top:0;width:calc((100% - 24px)/4);height:calc((100% - 24px)/4);display:flex;align-items:center;justify-content:center;border-radius:10px;font-weight:700;font-size:8cqw;transform:translate(calc(var(--c)*(100% + 8px)),calc(var(--r)*(100% + 8px)));transition:transform .12s ease-out;box-shadow:0 2px 6px #0006}
+.t48.l3{font-size:6.6cqw}.t48.l4{font-size:5.4cqw}
+.t48.pop{animation:pop48 .18s}.t48.bump{animation:bump48 .16s}
+@keyframes pop48{from{scale:.3;opacity:.2}to{scale:1;opacity:1}}@keyframes bump48{from{scale:1.2}to{scale:1}}
+.v2{background:#dff1ff;color:#0a2a78}.v4{background:#bfe3ff;color:#0a2a78}.v8{background:#8fd0ff;color:#0a2a78}.v16{background:#5bb8ff;color:#06245f}.v32{background:#2f98ff;color:#fff}.v64{background:#1f6fe0;color:#fff}
+.v128{background:#6a5cff;color:#fff}.v256{background:#a24dff;color:#fff}.v512{background:#d84dd8;color:#fff}.v1024{background:#ff9d00;color:#fff}.v2048{background:#ffd34a;color:#5a3a00;box-shadow:0 0 18px #ffd34a}.vbig{background:#fff6a0;color:#5a3a00;box-shadow:0 0 18px #fff6a0}
+.g48over{position:absolute;inset:0;background:#02081fcc;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border-radius:14px;font-size:20px;z-index:3}
+
+
+[hidden]{display:none!important}
+html{background:var(--bg)}body,.cta{font-family:var(--game-font),system-ui,sans-serif}
+body::before{background-image:var(--art-background)}
+.pill{background-image:var(--art-pill);background-color:var(--panel);border-radius:24px}
+.cta{background-image:var(--art-button);background-color:var(--panel);border-radius:var(--card-radius)}
+.btn,.tabs button,.cols button,.dc,.colbtn{background:linear-gradient(var(--panel),var(--bg));border-color:var(--line);color:var(--tx)}
+.tabs button.on,.cols button.on{background:linear-gradient(var(--r),var(--panel));color:var(--tx)}
+.info,.help details,.drp,.bkm,.g48,.g48top .sc{background:var(--panel);border-color:var(--line);color:var(--tx)}
+.ov{background:radial-gradient(ellipse at top,var(--panel),var(--bg))}
+.g48bg i,.it{background:var(--bg)}.it{border-radius:var(--card-radius)}
+.card img,.cell.lock{border-radius:var(--card-radius)}
+</style></head><body><div class="app">
+<div class="top"><div class="pill"><span class="ic">💎</span><b id="gems"></b></div><div class="pill" title="бесплатные крутки"><span class="ic">🎟</span><b id="fr"></b></div><button class="mute" id="mute">🔊</button><button class="mute" id="bk">💾</button></div>
+<div class="tabs"><button id="t1" class="on">Призыв</button><button id="t2">Коллекция</button><button id="t4">2048</button><button id="t3">Справка</button></div>
+
+<div id="v1">
+ <button class="btn colbtn" id="colbtn"><span>📚</span><b id="colname"></b><small id="colprog"></small><span>☰</span></button>
+ <div class="ban" id="ban"></div>
+ <div class="card hero" id="hero"></div>
+ <div id="pity"><div class="row"><span id="prl">Гарант R+ (50)</span><span id="pr"></span></div><div class="bar"><i id="br" style="background:var(--r)"></i></div>
+ <div id="spity"><div class="row"><span id="psl">Гарант SR (100)</span><span id="ps"></span></div><div class="bar"><i id="bs" style="background:var(--sr)"></i></div></div>
+ <div class="row"><span id="fifty"></span><span></span></div></div>
+ <div class="info" id="note" style="display:none">В этой коллекции пока только обычные карты N. Редкие R и SR появятся позже, поэтому гарантов здесь нет.</div>
+ <div class="pulls"><button class="cta" id="p1">Крутить<small>160 💎</small></button></div>
+ <div class="info" id="rates"></div>
+ <div class="info" id="stats"></div>
+</div>
+<div id="v3" class="help" style="display:none">
+<details open><summary>🎴 О чём игра</summary><div class="hb">Собирай коллекции карточек. Крути ленту, получай карты и деньги, выбивай редкие карты и закрывай альбомы. Карты собраны в коллекции, их переключают кнопками вверху.</div></details>
+<details><summary>🧭 Вкладки и что где</summary><div class="hb"><ul><li><b>Призыв</b> — крутить ленту, выбирать коллекцию и баннер, смотреть счётчики гарантов.</li><li><b>Коллекция</b> — альбом карт, мини-рулетка осколков, продажа дублей, фильтр по редкости.</li><li><b>2048</b> — мини-игра, за которую дают немного 💎.</li><li><b>Справка</b> — эта страница.</li><li><b>🔊 вверху</b> — включить или выключить звук.</li></ul></div></details>
+<details><summary>💎 Валюты</summary><div class="hb"><ul><li><b>💎 алмазы</b> — тратятся на крутки (обычно 160 за одну, у коллекции может быть своя цена), выпадают в виде денег и за проданные дубли.</li><li><b>🎟 бесплатные крутки</b> — +3 каждый день, тратятся первыми. За пропущенные дни не копятся.</li><li><b>✦ осколки</b> — дают дубликаты карт. Тратятся на мини-рулетку.</li></ul></div></details>
+<details><summary>🎰 Как работает крутка</summary><div class="hb">Нажми «Крутить»: лента прокрутится и остановится на метке. Выпасть может карта или деньги (20–60 💎). «Пропустить» сразу показывает результат, «Крутить ещё» запускает следующую без выхода. Все шансы считаются в той коллекции, которая выбрана в боковом меню.</div></details>
+<details><summary>⭐ Редкость и шансы</summary><div class="hb"><ul><li><b>SR</b> (супер редкая) — 2%</li><li><b>R</b> (редкая) — 14%</li><li><b>N</b> (обычная) — 64%</li><li><b>💰 деньги</b> — 20%</li></ul>Это стандартные значения. У каждой коллекции шансы, цена и гаранты могут быть свои, текущие видно на экране «Призыв».</div></details>
+<details><summary>🛡️ Гаранты и 50/50</summary><div class="hb"><ul><li><b>Гарант на R.</b> Если 49 круток подряд не выпало ни R, ни SR, то 50-я крутка гарантированно даст R или SR.</li><li><b>Гарант на SR.</b> Если 99 круток подряд не выпадала SR, то 100-я крутка гарантированно даст SR.</li><li><b>50/50 на баннер.</b> Когда выпадает SR, с шансом 50% это баннерная карта (та, что выбрана вверху на экране «Призыв»). Иначе выпадает одна из двух других SR. Если выпала не баннерная SR, то следующая SR точно будет баннерной.</li><li><b>Сброс счётчиков.</b> Счётчик гаранта на R обнуляется после любой R или SR, счётчик гаранта на SR — после любой SR. Оба счётчика видны на экране «Призыв», у каждой коллекции они свои.</li></ul></div></details>
+<details><summary>📚 Коллекции</summary><div class="hb">Для круток выбери коллекцию в боковом меню: нажми кнопку с названием коллекции на экране «Призыв» или проведи пальцем от левого края. Карты выпадают только из выбранной. Когда коллекция собрана полностью, её больше нельзя крутить, но она остаётся в альбоме. На вкладке «Коллекция» такая же кнопка и такое же меню переключают просмотр альбома, там доступны и собранные коллекции. У каждой свой набор карт. У каждой коллекции свои счётчики гарантов и свой статус 50/50. Скоро появятся новые.</div></details>
+<details><summary>♻️ Дубликаты и осколки</summary><div class="hb"><ul><li>Повторная карта остаётся в коллекции как копия, число копий видно в углу карты.</li><li>Каждый дубль даёт осколки: N — 1, R — 5, SR — 25.</li><li>Дубли можно продать (одна копия всегда остаётся): N — 20, R — 60, SR — 200 💎. Кнопка «Продать дубли» в коллекции или кнопка в окне карты.</li></ul></div></details>
+<details><summary>🎰 Мини-рулетка осколков</summary><div class="hb"><ul><li>Большая кнопка вверху вкладки «Коллекция». На вкладке появляется значок 🎰, когда осколков хватает.</li><li>Первый спин за день стоит 10 ✦, каждый следующий дороже на 5 ✦. Цена сбрасывается на следующий день.</li><li>Призы — только деньги: 10, 20, 40, 80, 200 или 500 💎.</li><li>Каждый 5-й спин даёт не меньше 80 💎.</li></ul></div></details>
+<details><summary>🔢 2048: мини-игра для денег</summary><div class="hb">На вкладке «2048» свайпай по полю: плитки сдвигаются, одинаковые складываются. Награда выдаётся один раз за партию, когда появляется плитка: 64 — 2 💎, 128 — 4, 256 — 8, 512 — 15, 1024 — 30, 2048 — 60. Всего можно получить не больше 100 💎 в день, лимит обновляется на следующий день. Партия и рекорд сохраняются, они входят в резервную копию 💾.</div></details>
+<details><summary>💾 Резервная копия прогресса</summary><div class="hb">Кнопка 💾 вверху открывает код с твоим прогрессом. Скопируй его или скачай файлом и сохрани в заметки. Если приложение переустановят или ты перейдёшь на другой телефон, вставь код или выбери файл в том же окне и нажми «Восстановить». Делай копию после важных выигрышей.</div></details>
+<details><summary>🖼️ Альбом и просмотр карт</summary><div class="hb">В альбоме закрытые слоты показаны рубашкой. Тап по открытой карте показывает её крупно и позволяет продать дубль. Фильтр внизу: Все, N, R, SR.</div></details>
+
+</div>
+<div id="v4" style="display:none">
+ <div class="g48top"><div class="sc"><small>Счёт</small><b id="g48s">0</b></div><div class="sc"><small>Рекорд</small><b id="g48b">0</b></div><button class="btn" id="g48n">Новая игра</button></div>
+ <div class="row"><span class="mut" id="g48lim"></span></div><div class="bar"><i id="g48bar" style="background:linear-gradient(90deg,#37c6ff,#bfeaff)"></i></div>
+ <div class="g48" id="g48"><div class="g48bg"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="g48t" id="g48t"></div><div class="g48over" id="g48over"><b>Ходов больше нет</b><button class="btn main" id="g48n2">Новая игра</button></div></div>
+ <div class="info">Свайпай по полю. Награды за плитки, один раз за партию: 64 — 2 💎, 128 — 4, 256 — 8, 512 — 15, 1024 — 30, 2048 — 60. Не больше 100 💎 в день.</div>
+</div>
+<div id="v2" style="display:none"><button class="btn colbtn" id="colbtn2"><span>📚</span><b id="colname2"></b><small id="colprog2"></small><span>☰</span></button><div class="pill plate"><span class="ic" id="pcount"></span><b id="pname"></b></div><div class="bar tall"><i id="pbar" style="background:linear-gradient(90deg,#37c6ff,#bfeaff)"></i></div><div class="pulls"><button class="cta" id="conv"></button></div><div class="row"><span></span><span id="shards"></span></div><div class="acts" style="margin:0 0 10px"><button class="btn" id="sellall" style="flex:1"></button></div><div class="grid" id="grid"></div><div class="filt" id="filt"><button data-f="all" class="on">Все</button><button data-f="N">N</button><button data-f="R">R</button><button data-f="SR">SR</button></div></div>
+</div>
+<div class="ov" id="ov">
+ <div class="stage"><div class="rwrap" id="rwrap"><div class="mark"></div><div class="strip" id="strip"></div></div><div class="rres" id="rres"></div></div>
+ <div class="res" id="res" style="display:none"></div>
+ <div class="cnt2" id="obal" style="text-align:center;margin-bottom:8px"></div>
+ <div class="acts"><button class="btn" id="skip">Пропустить</button><button class="btn" id="close" style="display:none">Закрыть</button><button class="cta" id="again" style="display:none;width:250px"></button></div></div>
+<div class="ov" id="det"><div class="modal" id="dm"></div></div>
+<div class="ov" id="bkov"><div class="bkm"><h3>💾 Резервная копия прогресса</h3>
+<div class="mut">Код хранит весь прогресс: карты, деньги, осколки, гаранты. Сохрани его в заметки или отправь себе, чтобы вернуть прогресс после переустановки или на другом телефоне.</div>
+<textarea id="bkt" rows="4" readonly></textarea>
+<div class="row"><button class="btn main" id="bkc">Скопировать код</button><button class="btn" id="bkf">Скачать файл</button></div>
+<div class="mut" style="margin-top:10px">Восстановление: вставь код или выбери файл.</div>
+<textarea id="bki" rows="3" placeholder="Вставь код сюда"></textarea>
+<div class="row"><button class="btn main" id="bkr">Восстановить</button><button class="btn" id="bkl">Выбрать файл</button><input type="file" id="bkfile" style="display:none" accept=".txt,.json,text/plain"></div>
+<div id="bkmsg" class="mut"></div><div class="row"><button class="btn" id="bkx">Закрыть</button></div></div></div>
+<div class="dr" id="dr"><div class="drbg" id="drbg"></div><aside class="drp"><div class="drh" id="drh">Коллекция для круток</div><div id="drlist"></div><div class="mut drn" id="drn">Собранные коллекции закрыты для круток, но остаются в альбоме.</div></aside></div>
+<div class="toast" id="toast"></div><div id="flash"></div>
+<script src="gacha.js" defer></script></body></html>
