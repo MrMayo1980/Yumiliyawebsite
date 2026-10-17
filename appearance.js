@@ -1,3 +1,4 @@
+import {isPages,loadPublished,loadPreview,localMediaUrl,resolvePendingAsset} from './hosting.js';
 // Public display settings only. Authentication and permissions stay on the server.
 export const DISPLAY_FONTS=['Cormorant Garamond','Montserrat','Philosopher','system-ui'];
 export const DEFAULT_APPEARANCE={
@@ -12,6 +13,7 @@ export const DEFAULT_APPEARANCE={
   }
 };
 export async function loadAppearance(preview=false){
+  if(isPages())return (preview?await loadPreview():(await loadPublished()).published).appearance;
   const response=await fetch(preview?'api/admin/appearance':'api/appearance',{cache:'no-store'});
   if(!response.ok){if(preview)throw new Error('Войдите в студию для предпросмотра.');return structuredClone(DEFAULT_APPEARANCE);}
   return response.json();
@@ -19,7 +21,7 @@ export async function loadAppearance(preview=false){
 export function displayImageUrl(value){
   if(!value)return '';
   if(/^data:image\/(png|jpeg|webp|gif|avif);base64,[A-Za-z0-9+/=]+$/.test(value))return value;
-  try{const url=new URL(value,location.href);return (url.protocol==='https:'||url.origin===location.origin&&/^\/(assets\/gacha|uploads)\/[a-zA-Z0-9_-]+\.(webp|png|jpe?g|gif|avif)$/i.test(url.pathname))&&!url.username&&!url.password?url.href:'';}catch{return '';}
+  return localMediaUrl(value,{imagesOnly:true});
 }
 const fontValue=value=>value==='system-ui'?'system-ui':JSON.stringify(value);
 const text=(selector,value,root=document)=>{const el=root.querySelector(selector);if(el)el.textContent=value;};

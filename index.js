@@ -1,3 +1,4 @@
+import {isPages,loadPublished,loadPreview,providePreview} from './hosting.js';
 import {loadLegacyGallery,mergeGallery,mediaType,safeMediaUrl} from './gallery.js';
 import {DEFAULT_APPEARANCE,loadAppearance,applySiteAppearance} from './appearance.js';
 const preview=new URLSearchParams(location.search).has('preview');
@@ -5,6 +6,8 @@ let site=structuredClone(DEFAULT_APPEARANCE.site);
 
 let allItems = [];
 let activeFilter = 'all';
+let previewDocument;
+if(isPages()&&preview){previewDocument=await loadPreview();providePreview(()=>previewDocument,source=>source===document.getElementById('gacha-frame').contentWindow);}
 
 document.addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('dragstart', e => e.preventDefault());
@@ -14,7 +17,7 @@ async function fetchMedia() {
   document.getElementById('gallery-error').hidden=true;
   const results=await Promise.allSettled([
     loadLegacyGallery(),
-    fetch(preview?'api/admin/gallery':'api/gallery',{cache:'no-store'}).then(r=>r.ok?r.json():{items:[],deleted:[]}).catch(()=>({items:[],deleted:[]}))
+    isPages()?(preview?Promise.resolve(previewDocument.gallery):loadPublished().then(state=>state.published.gallery)):fetch(preview?'api/admin/gallery':'api/gallery',{cache:'no-store'}).then(r=>r.ok?r.json():{items:[],deleted:[]}).catch(()=>({items:[],deleted:[]}))
   ]);
   const legacy=results[0].status==='fulfilled'?results[0].value:[];
   const overlay=results[1].status==='fulfilled'?results[1].value:{items:[],deleted:[]};

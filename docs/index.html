@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://api.github.com; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"><script src="pages-config.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Юмилия — Архив и гача</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Montserrat:wght@300;400&family=Philosopher:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0e0d18;
+  --bg2:#13112a;
+  --pink:#e8649a;
+  --border:rgba(232,100,154,0.2);
+  --text:#e8e0f0;
+  --muted:#7a6e8a;
+}
+body{
+  background:var(--bg);
+  background-image:radial-gradient(ellipse at 20% 0%,#1a0e2e 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,#1a0826 0%,transparent 60%);
+  color:var(--text);
+  font-family:'Montserrat',sans-serif;
+  font-weight:300;
+  min-height:100vh;
+  user-select:none;
+  -webkit-user-select:none;
+}
+header{text-align:center;padding:3.5rem 1.5rem 0;}
+.title-row{display:flex;align-items:center;justify-content:center;gap:1.2rem;margin-bottom:0.6rem;}
+.tline{height:1px;width:80px;background:linear-gradient(to right,transparent,var(--pink));}
+.tline.r{background:linear-gradient(to left,transparent,var(--pink));}
+@media(max-width:480px){.tline{width:30px;}}
+h1{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(3rem,12vw,5.5rem);
+  font-weight:300;
+  letter-spacing:0.25em;
+  color:var(--text);
+  line-height:1;
+}
+.subtitle{font-size:0.6rem;letter-spacing:0.35em;text-transform:uppercase;color:var(--muted);margin-bottom:1.5rem;}
+.divider{width:1px;height:40px;background:linear-gradient(to bottom,var(--pink),transparent);margin:0 auto 2rem;}
+[hidden]{display:none!important;}
+.site-nav{display:flex;justify-content:center;gap:0.5rem;margin:0 auto 2rem;}
+.site-nav a{border:1px solid var(--border);border-radius:100px;padding:0.7rem 1.5rem;color:var(--muted);font-size:0.7rem;letter-spacing:0.15em;text-decoration:none;text-transform:uppercase;transition:background 0.25s,color 0.25s;}
+.site-nav a[aria-current="page"]{background:var(--pink);border-color:var(--pink);color:#fff;}
+.site-nav a:hover{color:var(--text);}
+.site-nav a:focus-visible,.filter-pill button:focus-visible{outline:2px solid var(--text);outline-offset:4px;}
+body[data-section="gacha"] header{padding-top:1.25rem;}
+body[data-section="gacha"] h1{font-size:2.8rem;}
+body[data-section="gacha"] .subtitle,body[data-section="gacha"] .divider{display:none;}
+body[data-section="gacha"] .site-nav{margin:1rem auto;}
+body[data-section="gacha"] main{max-width:none;padding:0;}
+#gacha-frame{display:block;width:100%;height:calc(100vh - var(--site-header-height,160px));height:calc(100svh - var(--site-header-height,160px));min-height:360px;border:0;background:#030b2a;}
+.filter-pill{
+  display:flex;align-items:center;
+  background:rgba(255,255,255,0.04);
+  border:1px solid var(--border);
+  border-radius:100px;
+  padding:0.3rem;
+  width:fit-content;
+  margin:0 auto 3rem;
+  gap:0.2rem;
+}
+.filter-pill button{
+  background:none;border:none;
+  font-family:'Montserrat',sans-serif;
+  font-size:0.6rem;font-weight:400;
+  letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--muted);
+  padding:0.55rem 1.2rem;
+  border-radius:100px;cursor:pointer;
+  transition:all 0.25s;white-space:nowrap;
+}
+.filter-pill button.active{background:var(--pink);color:#fff;}
+.filter-pill button:hover:not(.active){color:var(--text);}
+main{max-width:1400px;margin:0 auto;padding:0 1rem 4rem;}
+#gallery{columns:4;column-gap:10px;}
+@media(max-width:1100px){#gallery{columns:3;}}
+@media(max-width:720px){#gallery{columns:2;}}
+@media(max-width:400px){#gallery{columns:1;}}
+.item{break-inside:avoid;margin-bottom:10px;position:relative;overflow:hidden;cursor:pointer;border-radius:6px;background:var(--bg2);}
+.item img,.item video{width:100%;display:block;transition:transform 0.5s cubic-bezier(0.16,1,0.3,1);}
+.item:hover img,.item:hover video{transform:scale(1.04);}
+.item .overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,13,24,0.5) 0%,transparent 60%);opacity:0;transition:opacity 0.3s;border-radius:6px;}
+.item:hover .overlay{opacity:1;}
+.gif-badge{position:absolute;top:0.5rem;right:0.5rem;font-size:0.55rem;letter-spacing:0.1em;padding:0.2rem 0.45rem;background:rgba(14,13,24,0.8);color:var(--pink);border:1px solid var(--pink);border-radius:3px;text-transform:uppercase;}
+#empty{display:none;text-align:center;padding:5rem 1rem;flex-direction:column;align-items:center;gap:1rem;}
+#empty.visible{display:flex;}
+#empty .flower{font-size:2.5rem;opacity:0.5;}
+#empty p{font-size:0.6rem;letter-spacing:0.25em;text-transform:uppercase;color:var(--muted);}
+#loading{text-align:center;padding:4rem;font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);}
+#lightbox{display:none;position:fixed;inset:0;z-index:200;background:rgba(10,9,20,0.97);align-items:center;justify-content:center;}
+#lightbox.open{display:flex;}
+#lightbox img{max-width:92vw;max-height:88vh;object-fit:contain;border-radius:4px;}
+#lightbox video{max-width:92vw;max-height:88vh;}
+#lightbox-close{position:fixed;top:1.2rem;right:1.5rem;background:none;border:1px solid var(--border);color:var(--muted);font-family:'Montserrat',sans-serif;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;padding:0.4rem 0.9rem;border-radius:100px;cursor:pointer;transition:color 0.2s,border-color 0.2s;}
+#lightbox-close:hover{color:var(--pink);border-color:var(--pink);}
+footer{text-align:center;padding:2rem;font-size:0.58rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);border-top:1px solid var(--border);}
+</style>
+<link rel="stylesheet" href="site.css">
+</head>
+<body data-section="archives">
+<header>
+  <div class="title-row">
+    <div class="tline"></div>
+    <h1>Юмилия</h1>
+    <div class="tline r"></div>
+  </div>
+  <p class="subtitle">Архив контента &nbsp;·&nbsp; Карточная гача</p>
+  <div class="divider"></div>
+  <nav class="site-nav" aria-label="Разделы сайта">
+    <a id="archives-link" href="#archives" aria-current="page" aria-controls="archives-panel">Архив</a>
+    <a id="gacha-link" href="#gacha" aria-controls="gacha-panel">Гача</a>
+    <a id="admin-link" href="admin.html">Админ</a>
+  </nav>
+</header>
+<main>
+  <section id="archives-panel" aria-label="Архив контента">
+  <div class="filter-pill" role="group" aria-label="Тип контента">
+    <button class="active" data-filter="all">Все</button>
+    <button data-filter="image">Фото</button>
+    <button data-filter="gif">GIF</button>
+    <button data-filter="video">Видео</button>
+  </div>
+  <div id="loading">Загрузка — —</div>
+  <div id="empty"><div class="flower">🌸</div><p>Фотографии появятся здесь</p></div>
+  <p id="gallery-error" hidden role="status" style="text-align:center;color:var(--muted);padding:1rem">Часть архива временно недоступна. <button id="retry-gallery" type="button">Повторить загрузку</button></p>
+  <div id="gallery"></div>
+  </section>
+  <section id="gacha-panel" aria-label="Карточная гача" hidden>
+    <iframe id="gacha-frame" title="Карточная гача — Юмилия" data-src="gacha_game.html"></iframe>
+  </section>
+</main>
+<div id="lightbox">
+  <button id="lightbox-close">✕ закрыть</button>
+  <img id="lightbox-img" style="display:none" draggable="false">
+  <video id="lightbox-vid" controls style="display:none"><source id="lightbox-vid-src" src="" type="video/mp4"></video>
+</div>
+<footer>🌸 &nbsp; Юмилия · Все права защищены</footer>
+<script type="module" src="index.js"></script>
+</body>
+</html>

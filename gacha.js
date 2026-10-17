@@ -1,6 +1,7 @@
 (async function bootGacha(){
 const preview = new URLSearchParams(location.search).has('preview');
 async function loadConfig(){
+ if(window.YUMILIYA_PAGES){const {loadPublished,loadPreview,materializeAssets}=await import('./hosting.js');return materializeAssets((preview?await loadPreview():(await loadPublished()).published).config);}
  const endpoint=preview?'api/admin/preview':'api/gacha';
  try{const response=await fetch(endpoint,{cache:'no-store'});if(response.ok)return await response.json();if(preview)throw new Error('Войдите в админ-панель для предпросмотра.')}catch(e){if(preview)throw e}
  const response=await fetch('data/gacha.json',{cache:'no-store'});if(!response.ok)throw new Error('Настройки игры недоступны.');return await response.json();

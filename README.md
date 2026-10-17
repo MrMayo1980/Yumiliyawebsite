@@ -1,6 +1,28 @@
 # Юмилия Studio
 
-Archive + configurable card gacha, with a server-backed admin studio. Requires Node.js 22 or newer. There are no third-party runtime dependencies.
+Archive + configurable card gacha, with a GitHub Pages admin and an optional server-backed admin studio. Requires Node.js 22 or newer. There are no third-party runtime dependencies.
+
+## GitHub Pages
+
+- Main site: https://mrmayo1980.github.io/Yumiliyawebsite/
+- Admin: https://mrmayo1980.github.io/Yumiliyawebsite/admin.html
+- Standalone game: https://mrmayo1980.github.io/Yumiliyawebsite/gacha_game.html
+
+Pages publishes **main → /docs**. `npm run build:pages` creates that public directory from an explicit file allowlist. It includes the archive, game, and admin, with relative paths that work beneath `/Yumiliyawebsite/`. The generated `.nojekyll` disables Jekyll processing. Credentials, server code, tests, private drafts, and unpublished uploads are excluded.
+
+The Pages admin signs in through GitHub, rather than the local server password:
+
+1. Create a **fine-grained personal access token** in GitHub settings.
+2. Select resource owner **MrMayo1980**, repository **Yumiliyawebsite** only, and **Contents: Read and write**. Set an expiration appropriate for your use.
+3. Enter that token in the Pages admin's **Токен доступа GitHub** field. Do not enter your GitHub password.
+
+The token is sent only to `https://api.github.com`, stays in memory, and is cleared on logout or reload. It is never included in a commit, export, browser draft, or the published website. GitHub verifies repository write access.
+
+Drafts and unpublished uploads are saved in IndexedDB in the current browser. Preview works without publishing. **Опубликовать** creates one GitHub commit containing the public settings and referenced uploaded files in both the repository source and `/docs`. GitHub Pages then rebuilds; allow a few minutes for the public site to update. Existing files outside those changes are preserved, and the branch is never force-pushed. If another editor published a newer revision, the old draft is retained for export instead of overwriting their changes. Use **Копии и история → Загрузить опубликованную версию** to reload the current GitHub version deliberately.
+
+`data/site-state.json` is the versioned public configuration. Only referenced uploads are committed, as `assets/media/…`; files removed from a draft stay private. The Pages history panel shows up to 10 earlier publications from Git history. The JSON export is a settings backup, not a bundled backup of unpublished binary uploads; publish wanted uploads or keep their originals before clearing a browser draft.
+
+To change application code: pull the latest `main` first, edit the root source, run tests and `npm run build:pages`, then commit and push the root source and generated `/docs` together. Publication through the admin also advances `main`, so pulling first prevents overwriting those changes. `node scripts/build-pages.mjs --use-local-published` deliberately exports the local server's published content instead of the repository snapshot; it never exports a private draft.
 
 ## Start locally
 
@@ -15,7 +37,7 @@ npm start
 - The generated initial password is in `.data/initial-admin-password.txt`. Open it locally, sign in, then change the password under **Доступ**.
 - `npm run setup` generates a new password and replaces the old hash. Restart the server afterwards to invalidate existing sessions. For automated provisioning, setup also accepts an `ADMIN_PASSWORD` environment variable.
 
-Open the site through this server. `file://` pages and GitHub Pages cannot run the authenticated editing API.
+Open the local password-based studio through this server. `file://` pages cannot run it. The generated GitHub Pages version uses GitHub access instead of this server API.
 
 ## Editing
 
@@ -46,7 +68,7 @@ Disable the old `gallery_unsigned` preset in your Cloudinary account. Removing i
 
 ## Deployment and storage
 
-Run one instance of this Node server behind an HTTPS reverse proxy on hosting with a persistent disk. Configure:
+For the optional password-based server deployment, run one instance of this Node server behind an HTTPS reverse proxy on hosting with a persistent disk. Configure:
 
 ```text
 NODE_ENV=production

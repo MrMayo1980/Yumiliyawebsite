@@ -2,6 +2,13 @@
   "name": "yumiliya-website",
   "private": true,
   "type": "module",
-  "scripts": {"start": "node server/main.mjs", "setup": "node server/setup.mjs", "test": "node --test tests/*.test.mjs"},
-  "engines": {"node": ">=22"}
+  "scripts": {
+    "start": "node server/main.mjs",
+    "setup": "node server/setup.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "build:pages": "node scripts/build-pages.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
 }
