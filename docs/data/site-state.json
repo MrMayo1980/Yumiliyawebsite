@@ -1,6 +1,6 @@
 {
-  "revision": 3,
-  "updatedAt": "2026-10-17T22:49:35.021Z",
+  "revision": 4,
+  "updatedAt": "2026-10-17T22:50:57.098Z",
   "published": {
     "config": {
       "cols": [
@@ -426,15 +426,10 @@
       }
     },
     "gallery": {
-      "items": [
-        {
-          "url": "assets/media/a632e438-f144-49b2-909b-58e6872ed5af.jpg",
-          "type": "image",
-          "name": "purple-abstract-3840x2160-27445.jpg",
-          "uploadedAt": "2026-10-17T22:49:26.335Z"
-        }
-      ],
-      "deleted": []
+      "items": [],
+      "deleted": [
+        "assets/media/a632e438-f144-49b2-909b-58e6872ed5af.jpg"
+      ]
     }
   }
 }
