@@ -1,4 +1,4 @@
-import {normalizeFrameSettings,cardFrame,framePreset,FRAME_PRESETS} from '../frames.js';
+import {normalizeFrameSettings,cardFrame,framePreset,FRAME_PRESETS,photoStyle} from '../frames.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
@@ -9,7 +9,7 @@ async function boot(config,{preview=false,saved=null}={}){
  const nodes=new Map(),store=new Map();if(saved)store.set('gacha3',JSON.stringify(saved));
  const node=()=>({children:[],style:{setProperty(){}},classList:{add(){},remove(){},toggle(){},contains(){return false;}},appendChild(n){this.children.push(n);},append(...n){this.children.push(...n);},replaceChildren(...n){this.children=n;},querySelector(){return node();},addEventListener(){},removeEventListener(){},parentNode:{style:{}},textContent:'',innerHTML:'',offsetWidth:300,clientWidth:300});
  const document={getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);},createElement:node,documentElement:node(),addEventListener(){},querySelector:node,body:node()};
- const context=vm.createContext({normalizeFrameSettings,cardFrame,framePreset,document,location:new URL('http://localhost/gacha_game.html'+(preview?'?preview=1':'')),URLSearchParams,fetch:async()=>({ok:true,json:async()=>structuredClone(config)}),localStorage:{getItem:key=>store.get(key),setItem:(key,val)=>store.set(key,val)},setTimeout:()=>1,clearTimeout(){},requestAnimationFrame:()=>1,cancelAnimationFrame(){},addEventListener(){},innerWidth:390,innerHeight:800,console,window:{},navigator:{},DOMMatrix:class{m41=0},getComputedStyle:()=>({transform:'none'})});
+ const context=vm.createContext({normalizeFrameSettings,cardFrame,framePreset,photoStyle,document,location:new URL('http://localhost/gacha_game.html'+(preview?'?preview=1':'')),URLSearchParams,fetch:async()=>({ok:true,json:async()=>structuredClone(config)}),localStorage:{getItem:key=>store.get(key),setItem:(key,val)=>store.set(key,val)},setTimeout:()=>1,clearTimeout(){},requestAnimationFrame:()=>1,cancelAnimationFrame(){},addEventListener(){},innerWidth:390,innerHeight:800,console,window:{},navigator:{},DOMMatrix:class{m41=0},getComputedStyle:()=>({transform:'none'})});
  await vm.runInContext(source.replace(/^import[^\n]*\n/, '').replace('applyTheme();g48Load();daily();render();','globalThis.game={pull,doPull,doMini,state:()=>S,config:CONFIG,tab,cardFace,resultHtml,itemHtml,detail};applyTheme();g48Load();daily();render();'),context);
  assert.ok(context.game,'Game booted successfully');return {game:context.game,nodes,store};
 }
@@ -48,4 +48,15 @@ test('preloaded original frames decorate new artwork and preserve baked-in origi
  assert.match(game.cardFace({...framedOriginal,frame:FRAME_PRESETS.SR.src}),/frame-preset-SR/);
  assert.ok(!game.cardFace(card,{locked:true}).includes('frame-preset'));
  assert.ok(!game.cardFace({...card,frameEnabled:false}).includes('card-frame'));
+});
+
+test('photo framing reaches every unlocked card view and never changes locked card backs',async()=>{
+ const c=structuredClone(original),card=c.cards.find(x=>x.r==='SR');card.photo={zoom:2.25,x:-17,y:28};
+ const saved={col:card.col,gems:42,free:3,day:'2099-1-1',p:{},inv:{[card.id]:2},shards:9,banner:card.id,mini:{n:0,g:0},st:{N:0,R:0,SR:0,M:0}};
+ const {game,nodes}=await boot(c,{saved});game.detail(card.id);
+ for(const html of [game.cardFace(card),nodes.get('hero').innerHTML,nodes.get('ban').innerHTML,nodes.get('grid').innerHTML,game.itemHtml({c:card}),game.resultHtml({c:card}),nodes.get('dm').innerHTML]){
+  assert.match(html,/--photo-zoom:2.25;--photo-x:-17%;--photo-y:28%/);assert.match(html,/class="card-photo"/);
+ }
+ const locked=game.cardFace(card,{locked:true});assert.ok(!locked.includes('--photo-'));assert.ok(!locked.includes(card.img));
+ assert.equal(game.state().inv[card.id],2);
 });

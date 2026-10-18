@@ -31,7 +31,7 @@ test('protected server: login, CSRF, draft isolation, publish, history, upload, 
  assert.equal((await request('/api/login','POST',{password},{headers:{Origin:'https://evil.example'}})).res.status,403);
  const login=await request('/api/login','POST',{password});assert.equal(login.res.status,200);cookie=login.res.headers.get('set-cookie').split(';')[0];assert.match(login.res.headers.get('set-cookie'),/HttpOnly/);assert.match(login.res.headers.get('set-cookie'),/SameSite=Strict/);csrf=login.body.csrf;
  assert.ok(!JSON.stringify(login.body).includes(password));const snapshot=(await request('/api/admin/state')).body;assert.equal(snapshot.revision,0);
- const changed=structuredClone(doc);changed.config.title='Changed in draft';changed.config.economy.dailyFree=9;changed.appearance=structuredClone(DEFAULT_APPEARANCE);changed.appearance.site.name='Draft website';changed.appearance.login.heading='Draft login';
+ const changed=structuredClone(doc);changed.config.cards[0].photo={zoom:2.1,x:-15,y:24};changed.config.title='Changed in draft';changed.config.economy.dailyFree=9;changed.appearance=structuredClone(DEFAULT_APPEARANCE);changed.appearance.site.name='Draft website';changed.appearance.login.heading='Draft login';
  assert.equal((await request('/api/admin/draft','PUT',{document:changed,expectedDraftVersion:0},{headers:{'X-CSRF-Token':'wrong'}})).res.status,403);
  assert.equal((await request('/api/admin/draft','PUT',{document:changed,expectedDraftVersion:0},{headers:{Origin:'https://evil.example'}})).res.status,403);
  assert.equal((await request('/api/admin/draft','PUT',{document:changed,expectedDraftVersion:0})).res.status,200);
@@ -44,7 +44,7 @@ test('protected server: login, CSRF, draft isolation, publish, history, upload, 
  const invalid=structuredClone(changed);invalid.config.cols[0].settings.r=100;assert.equal((await request('/api/admin/draft','PUT',{document:invalid,expectedDraftVersion:1})).res.status,422);
  assert.equal((await request('/api/admin/upload','POST',Buffer.from('<html>bad</html>'),{raw:true})).res.status,415);
  const bytes=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aCbcAAAAASUVORK5CYII=','base64');const uploaded=await request('/api/admin/upload','POST',bytes,{raw:true});assert.equal(uploaded.res.status,201);const file=await request('/'+uploaded.body.url);assert.equal(file.res.status,200);assert.equal(file.res.headers.get('content-type'),'image/png');
- const stored=JSON.parse(await readFile(join(privateDir,'state.json'),'utf8'));assert.equal(stored.published.config.title,'Changed in draft');assert.ok(!JSON.stringify(stored).includes(password));
+ const stored=JSON.parse(await readFile(join(privateDir,'state.json'),'utf8'));assert.equal(stored.published.config.title,'Changed in draft');assert.deepEqual(stored.published.config.cards[0].photo,changed.config.cards[0].photo);assert.ok(!JSON.stringify(stored).includes(password));
  assert.equal((await request('/api/logout','POST')).res.status,200);assert.equal((await request('/api/admin/state')).res.status,401);assert.equal((await request('/api/admin/preview')).res.status,401);
 });
 test('password changes revoke all sessions and login attempts are rate limited',async t=>{

@@ -42,7 +42,7 @@ export function normalizeFrameSettings(config){
   for(const rarity of ['N','R','SR'])if(!theme.frames[rarity])theme.frames[rarity]=FRAME_PRESETS[rarity].src;
   theme.frameLibraryVersion=1;
  }
- for(const card of config.cards){card.frame??='';card.frameEnabled??=true;}
+ for(const card of config.cards){card.frame??='';card.frameEnabled??=true;card.photo??={zoom:1,x:0,y:0};}
  return config;
 }
 export function cardFrame(card,theme){
@@ -51,4 +51,14 @@ export function cardFrame(card,theme){
  // Original cards already contain their decoration. New/replaced art inherits a frame.
  if(!card.frame&&framePreset(src)&&ORIGINAL_FRAMED_ART.has(card.img))return '';
  return src;
+}
+
+// Keep CSS values numeric even when loading a hand-edited/static configuration.
+export function photoSettings(card){
+ const bounded=(value,fallback,min,max)=>typeof value==='number'&&Number.isFinite(value)?Math.min(max,Math.max(min,value)):fallback;
+ return {zoom:bounded(card.photo?.zoom,1,1,4),x:bounded(card.photo?.x,0,-100,100),y:bounded(card.photo?.y,0,-100,100)};
+}
+export function photoStyle(card){
+ const {zoom,x,y}=photoSettings(card);
+ return `--photo-zoom:${zoom};--photo-x:${x}%;--photo-y:${y}%;`;
 }

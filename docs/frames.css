@@ -4,10 +4,12 @@
 .frame-preset-N{clip-path:polygon(evenodd,0% 0%,100% 0%,100% 100%,0% 100%,0% 0%,20% 4.6%,46.7% 4.6%,50.6% 6.1%,54% 4.6%,97.4% 4.6%,97.4% 98.4%,6% 98.4%,4.7% 96.9%,4.7% 12.5%,13% 12.1%,17.5% 9.1%,20% 4.6%)}
 .frame-preset-R{clip-path:polygon(evenodd,0% 0%,100% 0%,100% 100%,0% 100%,0% 0%,21.5% 5.5%,92.9% 5.5%,92.9% 42.5%,91.3% 47.5%,92.9% 52.5%,92.9% 89.5%,89% 95.5%,12% 95.5%,8.6% 91.5%,8.6% 52.5%,10% 47.5%,8.6% 42.5%,8.6% 16%,16% 14%,21% 10%,21.5% 5.5%)}
 .frame-preset-SR{clip-path:polygon(evenodd,0% 0%,100% 0%,100% 100%,0% 100%,0% 0%,23% 6%,90% 6%,93.8% 9%,93.8% 91.5%,89% 96.2%,14% 96.2%,7.2% 91.5%,7.5% 52%,9% 49%,7.5% 46%,7.5% 17%,16% 15%,21% 12%,23% 6%)}
-/* Cover the complete picture opening, including under the irregular badge. */
-.card-face.has-builtin-frame>.card-art{inset:2%;width:96%;height:96%;object-fit:cover;border-radius:5%}
+/* Clip the photograph independently, so zoom/position never moves the frame. */
 .card-face{position:relative;display:block;width:100%;height:100%;aspect-ratio:2/3;isolation:isolate}
-.card-face>.card-art,.card-face>.card-frame{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain}
-.card-face.has-frame>.card-art{inset:var(--frame-inset,4%);width:calc(100% - 2 * var(--frame-inset,4%));height:calc(100% - 2 * var(--frame-inset,4%));object-fit:cover;border-radius:var(--card-radius,12px);filter:none}
+.card-face>.card-photo,.card-face>.card-frame{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain}
+.card-photo{overflow:hidden;border-radius:var(--card-radius,12px)}
+.card-photo>.card-art{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain;transform:translate(var(--photo-x,0%),var(--photo-y,0%)) scale(var(--photo-zoom,1));transform-origin:center}
+.card-face.has-frame>.card-photo{inset:var(--frame-inset,4%);width:calc(100% - 2 * var(--frame-inset,4%));height:calc(100% - 2 * var(--frame-inset,4%))}
+.card-face.has-frame>.card-photo>.card-art{object-fit:cover;filter:none!important}
 .card-face>.card-frame{z-index:1;border-radius:0;pointer-events:none;filter:none}
-.card-face.has-builtin-frame>.card-art{inset:2%;width:96%;height:96%;object-fit:cover;border-radius:5%}
+.card-face.has-builtin-frame>.card-photo{inset:2%;width:96%;height:96%;border-radius:5%}

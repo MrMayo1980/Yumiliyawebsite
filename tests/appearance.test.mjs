@@ -1,4 +1,4 @@
-import {FRAME_PRESETS,normalizeFrameSettings,cardFrame} from '../frames.js';
+import {FRAME_PRESETS,normalizeFrameSettings,cardFrame,photoStyle} from '../frames.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
@@ -46,4 +46,14 @@ test('frame migration preloads once, preserves custom choices and allows clearin
  c.theme.frames.N='';normalizeFrameSettings(c);assert.equal(c.theme.frames.N,'');
  assert.equal(cardFrame(c.cards[0],c.theme),'');assert.equal(cardFrame({...c.cards[0],img:'assets/media/new.png',r:'SR'},c.theme),FRAME_PRESETS.SR.src);
  c.theme.frameLibraryVersion=2;assert.throws(()=>validateDocument({config:c,gallery:{items:[],deleted:[]}},true));
+});
+
+test('photo adjustments default to centered artwork, round-trip and reject unsafe or out-of-range values',()=>{
+ const input={config:structuredClone(config),gallery:{items:[],deleted:[]}},doc=validateDocument(input,true);
+ assert.deepEqual(doc.config.cards[0].photo,{zoom:1,x:0,y:0});assert.equal(input.config.cards[0].photo,undefined);
+ doc.config.cards[0].photo={zoom:1.75,x:-30,y:45};assert.deepEqual(validateDocument(doc,true).config.cards[0].photo,doc.config.cards[0].photo);
+ for(const photo of [null,{},[],{zoom:0,x:0,y:0},{zoom:5,x:0,y:0},{zoom:1,x:-101,y:0},{zoom:1,x:0,y:101},{zoom:NaN,x:0,y:0},{zoom:1,x:'0;display:none',y:0}]){
+  const bad=structuredClone(doc);bad.config.cards[0].photo=photo;assert.throws(()=>validateDocument(bad,true));
+ }
+ assert.equal(photoStyle({photo:{zoom:'bad',x:Infinity,y:'0;display:none'}}),'--photo-zoom:1;--photo-x:0%;--photo-y:0%;');
 });

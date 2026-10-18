@@ -114,3 +114,5 @@ Authentication design references: [Node crypto](https://nodejs.org/api/crypto.ht
 The admin’s **Оформление → Рамки карт** section and individual card editor include the original silver N, sapphire R and gold/pink SR presets. They reuse the existing WebP assets through the cutouts in `frames.css`; no replacement illustrations or extra uploads are needed. New artwork inherits its rarity’s preset. Original framed artwork keeps its existing appearance without a duplicate overlay. Custom transparent frames and disabling/clearing frames remain available.
 
 `frames.js` migrates older drafts once; intentionally cleared frames stay cleared afterwards. The library is shared by the studio, game and publication validator.
+
+Card creation and editing also include **Положение фото**: zoom (1–4×), horizontal/vertical offsets (−100% to 100%), synchronized sliders/numeric fields and a reset button. Adjustments are saved per card and used in the studio preview, summon/banner, reel, results, collection and card details. Locked card backs keep their normal appearance.

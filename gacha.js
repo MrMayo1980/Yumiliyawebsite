@@ -1,4 +1,4 @@
-import {normalizeFrameSettings,cardFrame,framePreset} from './frames.js';
+import {normalizeFrameSettings,cardFrame,framePreset,photoStyle} from './frames.js?v=photo-1';
 (async function bootGacha(){
 const preview = new URLSearchParams(location.search).has('preview');
 async function loadConfig(){
@@ -110,7 +110,7 @@ function spin(res,dur){return new Promise(done=>{
 })}
 function cardFace(card,{locked=false,concealed=false}={}){
  const frame=locked?'':cardFrame(card,CONFIG.theme),preset=framePreset(frame);
- return `<span class="card-face${frame?' has-frame':''}${preset?' has-builtin-frame':''}${concealed?' concealed':''}"><img class="card-art" src="${esc(locked?BACK:card.img)}" alt="${esc(locked||concealed?'Неизвестная карта':card.name)}">${frame?`<img class="card-frame${preset?' frame-preset frame-preset-'+preset:''}" src="${esc(frame)}" alt="" aria-hidden="true">`:''}</span>`;
+ return `<span class="card-face${frame?' has-frame':''}${preset?' has-builtin-frame':''}${concealed?' concealed':''}"${locked?'':` style="${photoStyle(card)}"`}><span class="card-photo"><img class="card-art" src="${esc(locked?BACK:card.img)}" alt="${esc(locked||concealed?'Неизвестная карта':card.name)}"></span>${frame?`<img class="card-frame${preset?' frame-preset frame-preset-'+preset:''}" src="${esc(frame)}" alt="" aria-hidden="true">`:''}</span>`;
 }
 const wait=ms=>new Promise(r=>setTimeout(r,skipAll?0:ms));
 function resultHtml(o){
