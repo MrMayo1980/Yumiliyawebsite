@@ -1,3 +1,4 @@
+import {FRAME_PRESETS,normalizeFrameSettings,cardFrame} from '../frames.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
@@ -33,8 +34,16 @@ test('login display changes labels and images without changing the password inpu
 
 test('frame settings preserve old cards, validate image URLs and round-trip shared and individual frames',()=>{
  const old={config:structuredClone(config),gallery:{items:[],deleted:[]}},normalized=validateDocument(old,true);
- assert.deepEqual(normalized.config.theme.frames,{N:'',R:'',SR:''});assert.equal(normalized.config.theme.frameInset,4);assert.equal(normalized.config.cards[0].frame,'');assert.equal(normalized.config.cards[0].frameEnabled,true);assert.equal(old.config.theme.frames,undefined);
+ assert.deepEqual(normalized.config.theme.frames,Object.fromEntries(Object.entries(FRAME_PRESETS).map(([r,p])=>[r,p.src])));assert.equal(normalized.config.theme.frameInset,4);assert.equal(normalized.config.cards[0].frame,'');assert.equal(normalized.config.cards[0].frameEnabled,true);assert.equal(old.config.theme.frames,undefined);
  normalized.config.theme.frames.N='assets/media/frame.png';normalized.config.theme.frameInset=7.5;normalized.config.cards[0].frame='https://example.com/card-frame.webp';normalized.config.cards[0].frameEnabled=false;
  assert.deepEqual(validateDocument(normalized,true),normalized);
  for(const change of [d=>d.config.theme.frames.N='javascript:alert(1)',d=>d.config.theme.frames.R='uploads/movie.mp4',d=>d.config.theme.frameInset=99,d=>d.config.theme.frames.extra='bad',d=>d.config.cards[0].frame='data:text/html,bad',d=>d.config.cards[0].frame='uploads/movie.webm',d=>d.config.cards[0].frameEnabled='yes']){const bad=structuredClone(normalized);change(bad);assert.throws(()=>validateDocument(bad,true));}
+});
+
+test('frame migration preloads once, preserves custom choices and allows clearing afterwards',()=>{
+ const c=structuredClone(config);c.theme.frames={N:'',R:'assets/media/my-frame.png',SR:''};
+ normalizeFrameSettings(c);assert.equal(c.theme.frames.N,FRAME_PRESETS.N.src);assert.equal(c.theme.frames.R,'assets/media/my-frame.png');
+ c.theme.frames.N='';normalizeFrameSettings(c);assert.equal(c.theme.frames.N,'');
+ assert.equal(cardFrame(c.cards[0],c.theme),'');assert.equal(cardFrame({...c.cards[0],img:'assets/media/new.png',r:'SR'},c.theme),FRAME_PRESETS.SR.src);
+ c.theme.frameLibraryVersion=2;assert.throws(()=>validateDocument({config:c,gallery:{items:[],deleted:[]}},true));
 });

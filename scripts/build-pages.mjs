@@ -4,7 +4,7 @@ import {fileURLToPath} from 'node:url';
 import {DEFAULT_APPEARANCE} from '../appearance.js';
 import {validateDocument} from '../validation.js';
 const root=fileURLToPath(new URL('../',import.meta.url));
-export const PUBLIC_FILES=['index.html','index.js','site.css','admin.html','admin.js','admin.css','appearance.js','hosting.js','pages-admin.js','validation.js','gallery.js','gacha_game.html','gacha.js'];
+export const PUBLIC_FILES=['index.html','index.js','site.css','admin.html','admin.js','admin.css','appearance.js','frames.js','frames.css','hosting.js','pages-admin.js','validation.js','gallery.js','gacha_game.html','gacha.js'];
 export async function buildPages({source=root,destination=join(source,'docs'),useLocalPublished=false,apiBase}={}){
  source=resolve(source);destination=resolve(destination);if(destination===source||!destination.startsWith(source+'/'))throw new Error('Output must be a subdirectory of the source.');
  let state;

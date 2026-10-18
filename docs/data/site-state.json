@@ -343,11 +343,12 @@
         "maxWidth": 1000,
         "cardRadius": 12,
         "frames": {
-          "N": "",
-          "R": "",
-          "SR": ""
+          "N": "assets/gacha/8fc111987e4b70f595eb.webp",
+          "R": "assets/gacha/9fe8fd284fe08cada5a0.webp",
+          "SR": "assets/gacha/24c240745ffdf28311e7.webp"
         },
-        "frameInset": 4
+        "frameInset": 4,
+        "frameLibraryVersion": 1
       },
       "labels": {
         "summon": "Призыв",

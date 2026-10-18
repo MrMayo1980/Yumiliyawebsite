@@ -87,7 +87,7 @@ function showSection() {
   if (section === 'gacha') {
     closeLB();
     const frame = document.getElementById('gacha-frame');
-    if (!frame.hasAttribute('src')) frame.src = frame.dataset.src+(preview?'?preview=1':'');
+    if (!frame.hasAttribute('src')) frame.src = frame.dataset.src+(preview?(frame.dataset.src.includes('?')?'&':'?')+'preview=1':'');
   }
   document.querySelectorAll('#gallery video').forEach(video => {
     if (section === 'gacha') video.pause();

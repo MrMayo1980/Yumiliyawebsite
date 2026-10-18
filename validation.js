@@ -1,3 +1,4 @@
+import {normalizeFrameSettings} from './frames.js';
 import {DEFAULT_APPEARANCE,DISPLAY_FONTS} from './appearance.js';
 export function validateDocument(doc, publish = false) {
   const fail = message => {throw Object.assign(new Error(message), {status:422});};
@@ -32,6 +33,7 @@ export function validateDocument(doc, publish = false) {
   obj(c.effects,'Эффекты');for(const k of ['sound','flash','vibration'])bool(c.effects[k],k);num(c.effects.volume,'Громкость',0,1);for(const k of ['spinSeconds','multiSpinSeconds'])num(c.effects[k],k,0.2,30);
   obj(c.theme,'Оформление');for(const k of ['background','pill','button'])image(c.theme[k],k,true);for(const k of ['bg','panel','line','text','muted','accent','N','R','SR'])if(!/^#[0-9a-fA-F]{6}$/.test(c.theme[k]))fail(`${k}: нужен цвет #RRGGBB.`);if(!['Philosopher','Montserrat','Cormorant Garamond','system-ui'].includes(c.theme.font))fail('Выберите шрифт из списка.');num(c.theme.maxWidth,'Ширина',400,1800,true);num(c.theme.cardRadius,'Скругление',0,40,true);
   if(c.theme.frames!==undefined){obj(c.theme.frames,'Рамки карт');for(const key of Object.keys(c.theme.frames))if(!['N','R','SR'].includes(key))fail('Неизвестная редкость рамки.');for(const rarity of ['N','R','SR'])frameImage(c.theme.frames[rarity],`Рамка ${rarity}`);}
+  if(c.theme.frameLibraryVersion!==undefined&&c.theme.frameLibraryVersion!==1)fail('Неизвестная версия готовых рамок.');
   if(c.theme.frameInset!==undefined)num(c.theme.frameInset,'Отступ внутри рамки',0,30);
   obj(c.labels,'Подписи');for(const key of ['summon','collection','game2048','help','pull','again','close','skip','dailyBonus','collectionDone','mini'])text(c.labels[key],key,150);
   list(c.help,'Справка',100);for(const h of c.help){obj(h,'Справка');text(h.title,'Заголовок',200);text(h.body,'Текст справки',20000);}
@@ -57,6 +59,6 @@ export function validateDocument(doc, publish = false) {
   list(doc.gallery.items,'Архив',10000);list(doc.gallery.deleted,'Скрытые файлы',20000);
   const urls=new Set();for(const item of doc.gallery.items){obj(item,'Файл');image(item.url,'Ссылка файла');if(urls.has(item.url))fail('В архиве есть повторяющиеся ссылки.');urls.add(item.url);if(!['image','gif','video'].includes(item.type))fail('Неизвестный тип файла.');text(item.name||'','Имя файла',300);}
   for(const url of doc.gallery.deleted)image(url,'Скрытая ссылка');
-  const normalized=structuredClone(doc);normalized.config.theme.frames??={N:'',R:'',SR:''};normalized.config.theme.frameInset??=4;for(const card of normalized.config.cards){card.frame??='';card.frameEnabled??=true;}
+  const normalized=structuredClone(doc);normalizeFrameSettings(normalized.config);
   return normalized;
 }

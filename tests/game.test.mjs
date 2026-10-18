@@ -1,3 +1,4 @@
+import {normalizeFrameSettings,cardFrame,framePreset,FRAME_PRESETS} from '../frames.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
@@ -8,8 +9,8 @@ async function boot(config,{preview=false,saved=null}={}){
  const nodes=new Map(),store=new Map();if(saved)store.set('gacha3',JSON.stringify(saved));
  const node=()=>({children:[],style:{setProperty(){}},classList:{add(){},remove(){},toggle(){},contains(){return false;}},appendChild(n){this.children.push(n);},append(...n){this.children.push(...n);},replaceChildren(...n){this.children=n;},querySelector(){return node();},addEventListener(){},removeEventListener(){},parentNode:{style:{}},textContent:'',innerHTML:'',offsetWidth:300,clientWidth:300});
  const document={getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);},createElement:node,documentElement:node(),addEventListener(){},querySelector:node,body:node()};
- const context=vm.createContext({document,location:new URL('http://localhost/gacha_game.html'+(preview?'?preview=1':'')),URLSearchParams,fetch:async()=>({ok:true,json:async()=>structuredClone(config)}),localStorage:{getItem:key=>store.get(key),setItem:(key,val)=>store.set(key,val)},setTimeout:()=>1,clearTimeout(){},requestAnimationFrame:()=>1,cancelAnimationFrame(){},addEventListener(){},innerWidth:390,innerHeight:800,console,window:{},navigator:{},DOMMatrix:class{m41=0},getComputedStyle:()=>({transform:'none'})});
- await vm.runInContext(source.replace('applyTheme();g48Load();daily();render();','globalThis.game={pull,doPull,doMini,state:()=>S,config:CONFIG,tab,cardFace,resultHtml,itemHtml,detail};applyTheme();g48Load();daily();render();'),context);
+ const context=vm.createContext({normalizeFrameSettings,cardFrame,framePreset,document,location:new URL('http://localhost/gacha_game.html'+(preview?'?preview=1':'')),URLSearchParams,fetch:async()=>({ok:true,json:async()=>structuredClone(config)}),localStorage:{getItem:key=>store.get(key),setItem:(key,val)=>store.set(key,val)},setTimeout:()=>1,clearTimeout(){},requestAnimationFrame:()=>1,cancelAnimationFrame(){},addEventListener(){},innerWidth:390,innerHeight:800,console,window:{},navigator:{},DOMMatrix:class{m41=0},getComputedStyle:()=>({transform:'none'})});
+ await vm.runInContext(source.replace(/^import[^\n]*\n/, '').replace('applyTheme();g48Load();daily();render();','globalThis.game={pull,doPull,doMini,state:()=>S,config:CONFIG,tab,cardFace,resultHtml,itemHtml,detail};applyTheme();g48Load();daily();render();'),context);
  assert.ok(context.game,'Game booted successfully');return {game:context.game,nodes,store};
 }
 test('custom starting balance, daily bonus, labels, mini-game switches and preview storage reach the game',async()=>{
@@ -37,4 +38,14 @@ test('rarity frames and per-card overrides appear consistently without changing 
  const normal=config.cards.find(card=>card.r==='N');assert.match(game.cardFace(normal),/frame-n.png/);
  assert.ok(!game.cardFace({...normal,frameEnabled:false}).includes('card-frame'));assert.ok(!game.cardFace(normal,{locked:true}).includes('card-frame'));assert.ok(!game.cardFace(normal,{locked:true}).includes(normal.img));assert.match(game.cardFace(normal,{locked:true}),new RegExp(config.back.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  assert.match(game.cardFace({...normal,name:'<img src=x>',frame:'https://example.com/f.png?q="test"'}),/&lt;img src=x&gt;/);assert.match(game.cardFace({...normal,frame:'https://example.com/f.png?q="test"'}),/&quot;test&quot;/);
+});
+
+test('preloaded original frames decorate new artwork and preserve baked-in originals',async()=>{
+ const config=structuredClone(original),card=config.cards[0];card.img='assets/media/new-art.jpg';
+ const {game}=await boot(config);assert.match(game.cardFace(card),/frame-preset-N/);assert.ok(game.cardFace(card).includes(FRAME_PRESETS.N.src));
+ for(const r of ['N','R','SR'])assert.match(game.cardFace({...card,r}),new RegExp('frame-preset-'+r));
+ const framedOriginal=config.cards[1];assert.ok(!game.cardFace(framedOriginal).includes('card-frame'));
+ assert.match(game.cardFace({...framedOriginal,frame:FRAME_PRESETS.SR.src}),/frame-preset-SR/);
+ assert.ok(!game.cardFace(card,{locked:true}).includes('frame-preset'));
+ assert.ok(!game.cardFace({...card,frameEnabled:false}).includes('card-frame'));
 });

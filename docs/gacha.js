@@ -1,3 +1,4 @@
+import {normalizeFrameSettings,cardFrame,framePreset} from './frames.js';
 (async function bootGacha(){
 const preview = new URLSearchParams(location.search).has('preview');
 async function loadConfig(){
@@ -6,7 +7,7 @@ async function loadConfig(){
  try{const response=await fetch(endpoint,{cache:'no-store'});if(response.ok)return await response.json();if(preview)throw new Error('Войдите в админ-панель для предпросмотра.')}catch(e){if(preview)throw e}
  const response=await fetch('data/gacha.json',{cache:'no-store'});if(!response.ok)throw new Error('Настройки игры недоступны.');return await response.json();
 }
-const CONFIG=await loadConfig();
+const CONFIG=normalizeFrameSettings(await loadConfig());
 const DATA={...CONFIG,cols:CONFIG.cols.filter(c=>c.enabled),cards:CONFIG.cards.filter(c=>c.enabled&&CONFIG.cols.some(col=>col.id===c.col&&col.enabled))};
 if(!DATA.cols.length||DATA.cols.some(col=>!DATA.cards.some(c=>c.col===col.id&&c.r==='N')))throw new Error('Для игры нужна активная коллекция с картами N.');
 const STORAGE=preview?'gacha_admin_preview':'gacha3';
@@ -108,8 +109,8 @@ function spin(res,dur){return new Promise(done=>{
  skipFn=()=>{st.style.transition='none';st.style.transform='translateX('+target+'px)';fin()};
 })}
 function cardFace(card,{locked=false,concealed=false}={}){
- const frame=!locked&&card.frameEnabled!==false?(card.frame||CONFIG.theme.frames?.[card.r]||''):'';
- return `<span class="card-face${frame?' has-frame':''}${concealed?' concealed':''}"><img class="card-art" src="${esc(locked?BACK:card.img)}" alt="${esc(locked||concealed?'Неизвестная карта':card.name)}">${frame?`<img class="card-frame" src="${esc(frame)}" alt="" aria-hidden="true">`:''}</span>`;
+ const frame=locked?'':cardFrame(card,CONFIG.theme),preset=framePreset(frame);
+ return `<span class="card-face${frame?' has-frame':''}${preset?' has-builtin-frame':''}${concealed?' concealed':''}"><img class="card-art" src="${esc(locked?BACK:card.img)}" alt="${esc(locked||concealed?'Неизвестная карта':card.name)}">${frame?`<img class="card-frame${preset?' frame-preset frame-preset-'+preset:''}" src="${esc(frame)}" alt="" aria-hidden="true">`:''}</span>`;
 }
 const wait=ms=>new Promise(r=>setTimeout(r,skipAll?0:ms));
 function resultHtml(o){

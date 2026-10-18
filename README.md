@@ -108,3 +108,9 @@ Tests cover password verification, authentication/CSRF/origin checks, login thro
 Cloudflare deployment uses the documented free-tier limits. The public site stays on GitHub Pages; Worker/D1 outages or exhausted limits can temporarily prevent editing. No paid storage service is required. Uploads are buffered in the editor’s browser until publication; the Worker streams the encoded files to the repository and stores only authentication/upload metadata in D1.
 
 Authentication design references: [Node crypto](https://nodejs.org/api/crypto.html), [OWASP session management](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html).
+
+### Preloaded original card frames
+
+The admin’s **Оформление → Рамки карт** section and individual card editor include the original silver N, sapphire R and gold/pink SR presets. They reuse the existing WebP assets through the cutouts in `frames.css`; no replacement illustrations or extra uploads are needed. New artwork inherits its rarity’s preset. Original framed artwork keeps its existing appearance without a duplicate overlay. Custom transparent frames and disabling/clearing frames remain available.
+
+`frames.js` migrates older drafts once; intentionally cleared frames stay cleared afterwards. The library is shared by the studio, game and publication validator.
