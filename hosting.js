@@ -21,8 +21,9 @@ export function localMediaUrl(value,{imagesOnly=false}={}){
  }catch{return '';}
 }
 let publishedPromise,previewPromise;
-export function loadPublished(){
- return publishedPromise??=fetch('data/site-state.json',{cache:'no-store'}).then(async response=>{if(!response.ok)throw new Error('Опубликованные настройки недоступны.');return response.json();}).catch(error=>{publishedPromise=undefined;throw error;});
+export function loadPublished({fresh=false}={}){
+ if(fresh)publishedPromise=undefined;
+ return publishedPromise??=fetch('data/site-state.json'+(fresh?'?t='+Date.now():''),{cache:'no-store'}).then(async response=>{if(!response.ok)throw new Error('Опубликованные настройки недоступны.');return response.json();}).catch(error=>{publishedPromise=undefined;throw error;});
 }
 export function loadPreview(){
  if(window.parent===window)return Promise.reject(new Error('Откройте предпросмотр из админ-панели.'));

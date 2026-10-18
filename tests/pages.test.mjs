@@ -5,7 +5,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {GithubPublisher} from '../cloudflare/github.mjs';
 import {PasswordPublisher} from '../pages-admin.js';
-import {localMediaUrl} from '../hosting.js';
+import {localMediaUrl,loadPublished} from '../hosting.js';
 import {buildPages,PUBLIC_FILES} from '../scripts/build-pages.mjs';
 import {DEFAULT_APPEARANCE} from '../appearance.js';
 const config=JSON.parse(await readFile(new URL('../data/gacha.json',import.meta.url),'utf8'));
@@ -59,4 +59,10 @@ test('Pages build includes both applications and excludes credentials, source se
  const html=await readFile(join(source,'docs/admin.html'),'utf8');assert.match(html,/pages-config.js/);assert.match(html,/https:\/\/login.example.workers.dev/);assert.ok(!html.includes('api.github.com'));assert.ok(!html.includes('private-test-secret'));
  const browser=await readFile(join(source,'docs/pages-admin.js'),'utf8');assert.ok(!browser.includes('api.github.com'));assert.ok(!browser.includes('GITHUB_TOKEN'));const admin=await readFile(join(source,'docs/admin.js'),'utf8');assert.ok(!admin.includes('Токен доступа'));
  const runtime=await readFile(join(source,'docs/pages-config.js'),'utf8');assert.match(runtime,/MrMayo1980/);assert.ok(!runtime.includes('private-test-secret'));
+});
+
+test('fresh published reads bypass a previously cached catalog and the CDN URL',async()=>{
+ const originalFetch=globalThis.fetch,requests=[];let revision=1;
+ globalThis.fetch=async url=>{requests.push(url);return Response.json({revision});};
+ try{assert.equal((await loadPublished({fresh:true})).revision,1);revision=2;assert.equal((await loadPublished()).revision,1);assert.equal((await loadPublished({fresh:true})).revision,2);assert.equal(requests.length,2);assert.ok(requests.every(url=>url.startsWith('data/site-state.json?t=')));}finally{globalThis.fetch=originalFetch;}
 });

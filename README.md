@@ -122,3 +122,5 @@ Card creation and editing also include **Положение фото**: zoom (1�
 Opening the gacha directly defers the archive request until the archive is opened. Images reserve layout space and decode asynchronously; archive videos receive sources near the viewport, autoplay only while visible, and pause when the page, archive or lightbox hides them. Filters release old video buffers. The admin archive uses `preload="none"`.
 
 Photo controls update the existing preview styles at most once per animation frame. Game card lookups use collection/rarity indexes; unchanged hero, banner, album and help content keep their existing DOM. Muted reel animations skip audio-only per-frame layout reads. Cards in the album and studio use lazy image loading.
+
+The game refreshes its published catalog after returning to the game or opening its main tabs, and receives publication notices from the admin. It waits for an open result/dialog to close, then reloads with the current progress and tab preserved. Publication notices briefly retry while GitHub Pages builds. Plain static hosting reads the published `data/site-state.json` before falling back to the original seed catalog.

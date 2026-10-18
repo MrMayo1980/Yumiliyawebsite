@@ -1,10 +1,19 @@
 import {normalizeFrameSettings,cardFrame,framePreset,photoStyle} from './frames.js?v=photo-1';
 (async function bootGacha(){
 const preview = new URLSearchParams(location.search).has('preview');
+let fetchedRevision=null;
 async function loadConfig(){
- if(window.YUMILIYA_PAGES){const {loadPublished,loadPreview,materializeAssets}=await import('./hosting.js');return materializeAssets((preview?await loadPreview():(await loadPublished()).published).config);}
+ if(window.YUMILIYA_PAGES){
+  const {loadPublished,loadPreview,materializeAssets}=await import('./hosting.js?v=catalog-1');
+  if(preview)return materializeAssets((await loadPreview()).config);
+  const state=await loadPublished({fresh:true});fetchedRevision=state.revision;return materializeAssets(state.published.config);
+ }
  const endpoint=preview?'api/admin/preview':'api/gacha';
  try{const response=await fetch(endpoint,{cache:'no-store'});if(response.ok)return await response.json();if(preview)throw new Error('Войдите в админ-панель для предпросмотра.')}catch(e){if(preview)throw e}
+ // A plain static server must use the published catalog too, rather than the original seed cards.
+ const published=await fetch('data/site-state.json?t='+Date.now(),{cache:'no-store'});
+ if(published.ok){const state=await published.json();if(!state.published?.config)throw new Error('Опубликованный каталог карт повреждён.');fetchedRevision=state.revision;return state.published.config;}
+ if(published.status!==404)throw new Error('Не удалось обновить опубликованный каталог карт.');
  const response=await fetch('data/gacha.json',{cache:'no-store'});if(!response.ok)throw new Error('Настройки игры недоступны.');return await response.json();
 }
 const CONFIG=normalizeFrameSettings(await loadConfig());
@@ -295,8 +304,45 @@ function g48Swipe(dx,dy){if(Math.max(Math.abs(dx),Math.abs(dy))<24)return;g48Mov
  addEventListener('keydown',e=>{if($('v4').style.display==='none')return;const k={ArrowLeft:0,ArrowUp:1,ArrowRight:2,ArrowDown:3}[e.key];if(k!==undefined){e.preventDefault();g48Move(k)}})}
 $('g48n').onclick=g48Reset;$('g48n2').onclick=g48Reset;
 $('t4').onclick=()=>tab(4);
-function tab(n){if(n===4&&!CONFIG.game2048.enabled)n=1;[1,2,3,4].forEach(i=>{$('v'+i).style.display=n===i?'':'none';$('t'+i).classList.toggle('on',n===i)});if(n===4)g48Render()}
+let currentTab=1;
+function tab(n){if(n===4&&!CONFIG.game2048.enabled)n=1;currentTab=n;[1,2,3,4].forEach(i=>{$('v'+i).style.display=n===i?'':'none';$('t'+i).classList.toggle('on',n===i)});if(n===4)g48Render()}
 applyTheme();g48Load();daily();render();
+try{const remembered=Number(sessionStorage.getItem(STORAGE+'_catalog_tab'));sessionStorage.removeItem(STORAGE+'_catalog_tab');if([1,2,3,4].includes(remembered))tab(remembered);}catch{}
+watchCatalog();
+
+function watchCatalog(){
+ if(preview)return;
+ const original=JSON.stringify(CONFIG);let checking=null,pending=false,reloadTimer=0,retryTimer=0,targetRevision=0,retries=0,checkedAt=Date.now();
+ const apply=()=>{
+  clearTimeout(reloadTimer);if(!pending||document.hidden)return;
+  if(g48busy||['ov','det','bkov'].some(id=>$(id).classList.contains('show'))||$('dr').classList.contains('open')){reloadTimer=setTimeout(apply,500);return;}
+  save();try{sessionStorage.setItem(STORAGE+'_catalog_tab',String(currentTab));}catch{}location.reload();
+ };
+ const refresh=async(force=false)=>{
+  if(document.hidden)return;
+  if(pending){apply();return;}
+  if(checking)return checking;
+  if(!force&&Date.now()-checkedAt<3000)return;
+  checkedAt=Date.now();clearTimeout(retryTimer);
+  checking=(async()=>{
+   try{
+    const next=normalizeFrameSettings(await loadConfig());
+    if(JSON.stringify(next)!==original){pending=true;apply();return;}
+   }catch(error){console.warn('Не удалось обновить каталог карт.',error);}
+   finally{checking=null;}
+   // Pages needs a short build after publishing. Retry only while waiting for that revision.
+   if(targetRevision>Number(fetchedRevision)&&retries<6){const delay=[3000,5000,10000,15000,30000,30000][retries++];retryTimer=setTimeout(()=>refresh(true),delay);}
+  })();return checking;
+ };
+ const publication=raw=>{try{const revision=JSON.parse(raw).revision;if(Number.isSafeInteger(revision)&&revision>Number(fetchedRevision)){targetRevision=Math.max(targetRevision,revision);retries=0;refresh(true);}}catch{}};
+ addEventListener('focus',()=>refresh());
+ addEventListener('pageshow',event=>{if(event.persisted)refresh(true);});
+ addEventListener('storage',event=>{if(event.key==='yumiliya-publication'&&event.newValue)publication(event.newValue);});
+ addEventListener('message',event=>{if(event.origin===location.origin&&event.source===window.parent&&event.data?.type==='yumiliya-refresh-game')refresh(true);});
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh(true);});
+ for(const id of ['t1','t2'])$(id).addEventListener('click',()=>refresh());
+ try{const notice=localStorage.getItem('yumiliya-publication');if(notice)publication(notice);}catch{}
+}
 
 function applyTheme(){
  document.title=CONFIG.title;const t=CONFIG.theme,r=document.documentElement.style;

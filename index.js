@@ -108,6 +108,7 @@ function showSection() {
     closeLB();
     const frame = document.getElementById('gacha-frame');
     if (!frame.hasAttribute('src')) frame.src = frame.dataset.src+(preview?(frame.dataset.src.includes('?')?'&':'?')+'preview=1':'');
+    else if(!preview)frame.contentWindow?.postMessage({type:'yumiliya-refresh-game'},location.origin);
   }
   if(section==='archives'&&!galleryLoaded)fetchMedia();
   videoLoader.update();
