@@ -8,7 +8,8 @@ async function loadConfig(){
  const response=await fetch('data/gacha.json',{cache:'no-store'});if(!response.ok)throw new Error('Настройки игры недоступны.');return await response.json();
 }
 const CONFIG=normalizeFrameSettings(await loadConfig());
-const DATA={...CONFIG,cols:CONFIG.cols.filter(c=>c.enabled),cards:CONFIG.cards.filter(c=>c.enabled&&CONFIG.cols.some(col=>col.id===c.col&&col.enabled))};
+const activeCols=CONFIG.cols.filter(c=>c.enabled),activeIds=new Set(activeCols.map(c=>c.id));
+const DATA={...CONFIG,cols:activeCols,cards:CONFIG.cards.filter(c=>c.enabled&&activeIds.has(c.col))};
 if(!DATA.cols.length||DATA.cols.some(col=>!DATA.cards.some(c=>c.col===col.id&&c.r==='N')))throw new Error('Для игры нужна активная коллекция с картами N.');
 const STORAGE=preview?'gacha_admin_preview':'gacha3';
 if(preview&&new URLSearchParams(location.search).has('reset'))localStorage.removeItem(STORAGE);
@@ -18,16 +19,19 @@ const E=CONFIG.economy,L=CONFIG.labels;
 const BACK=DATA.back;
 const COLS=DATA.cols;
 const C=DATA.cards;
-const byR=r=>C.filter(c=>c.r===r&&c.col===S.col), get=id=>C.find(c=>c.id===id);
+const cardsById=new Map(C.map(c=>[c.id,c])),colsById=new Map(COLS.map(c=>[c.id,c]));
+const catalog=new Map(COLS.map(col=>[col.id,{cards:[],N:[],R:[],SR:[],settings:{...CONFIG.defaults,...col.settings}}]));
+for(const card of C){const col=catalog.get(card.col);col.cards.push(card);col[card.r].push(card);}
+const byR=r=>catalog.get(S.col)[r],get=id=>cardsById.get(id);
 const SH=E.shards, PRICE=E.sellPrices;
 const FRESH=()=>({col:COLS[0].id,gems:E.startingGems,free:E.startingFree,day:'',p:{},inv:{},shards:0,banner:0,test:false,mute:!CONFIG.effects.sound,mini:{n:0,g:0},st:{N:0,R:0,SR:0,M:0}});
 let S=FRESH();
 const P=()=>S.p[S.col]||(S.p[S.col]={pr:0,ps:0,g:false});
 const VC=()=>(S.vcol&&COLS.find(x=>x.id===S.vcol))?S.vcol:S.col;
-const colCards=id=>C.filter(c=>c.col===id);
+const colCards=id=>catalog.get(id)?.cards||[];
 const isDone=id=>{const a=colCards(id);return a.length>0&&a.every(c=>S.inv[c.id])};
 const DEF=CONFIG.defaults;
-const CS=id=>Object.assign({},DEF,((COLS.find(x=>x.id===id)||{}).settings)||{});
+const CS=id=>catalog.get(id)?.settings||DEF;
 const defBanner=()=>{const l=CS(S.col).banner,o=byR('SR');return(l&&o.find(x=>x.id===l))?l:((o[0]||{}).id||0)};
 const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 try{const x=JSON.parse(localStorage.getItem(STORAGE)||'null');if(x)S=Object.assign(S,x)}catch(e){}
@@ -103,14 +107,14 @@ function spin(res,dur){return new Promise(done=>{
  st.style.transition='transform '+dur+'s cubic-bezier(.1,.7,.1,1)';st.style.transform='translateX('+target+'px)';
  SND.start();
  let last=-1,raf,over=false;
- const tick=()=>{const m=new DOMMatrix(getComputedStyle(st).transform),idx=Math.floor((-m.m41+W/2)/PITCH);if(idx!==last){last=idx;SND.tick()}raf=requestAnimationFrame(tick)};tick();
+ const tick=()=>{const m=new DOMMatrix(getComputedStyle(st).transform),idx=Math.floor((-m.m41+W/2)/PITCH);if(idx!==last){last=idx;SND.tick()}raf=requestAnimationFrame(tick)};if(!S.mute&&CONFIG.effects.sound&&CONFIG.effects.volume>0)tick();
  const fin=()=>{if(over)return;over=true;cancelAnimationFrame(raf);clearTimeout(to);st.removeEventListener('transitionend',fin);skipFn=null;st.children[k].classList.add('win');done()};
  st.addEventListener('transitionend',fin);const to=setTimeout(fin,dur*1000+600);
  skipFn=()=>{st.style.transition='none';st.style.transform='translateX('+target+'px)';fin()};
 })}
-function cardFace(card,{locked=false,concealed=false}={}){
+function cardFace(card,{locked=false,concealed=false,lazy=false}={}){
  const frame=locked?'':cardFrame(card,CONFIG.theme),preset=framePreset(frame);
- return `<span class="card-face${frame?' has-frame':''}${preset?' has-builtin-frame':''}${concealed?' concealed':''}"${locked?'':` style="${photoStyle(card)}"`}><span class="card-photo"><img class="card-art" src="${esc(locked?BACK:card.img)}" alt="${esc(locked||concealed?'Неизвестная карта':card.name)}"></span>${frame?`<img class="card-frame${preset?' frame-preset frame-preset-'+preset:''}" src="${esc(frame)}" alt="" aria-hidden="true">`:''}</span>`;
+ return `<span class="card-face${frame?' has-frame':''}${preset?' has-builtin-frame':''}${concealed?' concealed':''}"${locked?'':` style="${photoStyle(card)}"`}><span class="card-photo"><img class="card-art" decoding="async"${lazy?' loading="lazy"':''} src="${esc(locked?BACK:card.img)}" alt="${esc(locked||concealed?'Неизвестная карта':card.name)}"></span>${frame?`<img class="card-frame${preset?' frame-preset frame-preset-'+preset:''}" src="${esc(frame)}" alt="" aria-hidden="true">`:''}</span>`;
 }
 const wait=ms=>new Promise(r=>setTimeout(r,skipAll?0:ms));
 function resultHtml(o){
@@ -179,10 +183,11 @@ function fit(){const w=innerWidth,h=innerHeight,land=w>h*1.1,r=document.document
  const z=Math.max(1,Math.min(2.4,land?Math.min(w/900,h/700):Math.min(w/520,h/985)));
  r.setProperty('--z',z.toFixed(3));r.setProperty('--mw',Math.min(w/z,land?CONFIG.theme.maxWidth:Math.min(900,CONFIG.theme.maxWidth)).toFixed(1))}
 fit();addEventListener('resize',fit);
+const rendered={};
 function render(){
  renderCustomUI();
  $('mute').textContent=S.mute?'🔇':'🔊';$('gems').textContent=S.test?'∞':S.gems;$('fr').textContent=S.test?'∞':S.free;
- $('colname2').textContent=COLS.find(x=>x.id===VC()).name;{const v=colCards(VC());$('colprog2').textContent=v.filter(c=>S.inv[c.id]).length+'/'+v.length+(isDone(VC())?' ✔':'')}
+ $('colname2').textContent=colsById.get(VC()).name;{const v=colCards(VC());$('colprog2').textContent=v.filter(c=>S.inv[c.id]).length+'/'+v.length+(isDone(VC())?' ✔':'')}
  {const st=CS(S.col),nn=Math.max(0,+(100-st.sr-st.r-st.money).toFixed(1));
  $('pr').textContent=st.pityR?P().pr+'/'+st.pityR:'выкл.';$('br').style.width=(st.pityR?Math.min(100,P().pr/st.pityR*100):0)+'%';$('prl').textContent='Гарант R+ ('+st.pityR+')';
  $('ps').textContent=st.pityS?P().ps+'/'+st.pityS:'выкл.';$('bs').style.width=(st.pityS?Math.min(100,P().ps/st.pityS*100):0)+'%';$('psl').textContent='Гарант SR ('+st.pityS+')';
@@ -192,19 +197,23 @@ function render(){
  if(hs&&(!get(S.banner)||get(S.banner).col!==S.col||get(S.banner).r!=='SR'))S.banner=defBanner();
  const lock=!!(hs&&CS(S.col).banner&&byR('SR').some(x=>x.id===CS(S.col).banner));if(lock)S.banner=CS(S.col).banner;$('ban').style.display=lock?'none':'';
  $('hero').style.display=hs?'':'none';$('pity').style.display=hs||hr?'':'none';$('note').style.display=hs?'none':'';$('note').textContent=hr?'В этой коллекции пока нет SR, они появятся позже. Гарант на R работает.':'В этой коллекции пока только обычные карты N. Редкие появятся позже, поэтому гарантов здесь нет.';$('spity').style.display=hs?'':'none';$('fifty').parentNode.style.display=hs?'':'none';
- if(hs)$('hero').innerHTML=cardFace(get(S.banner));
+ if(hs&&rendered.hero!==S.banner){rendered.hero=S.banner;$('hero').innerHTML=cardFace(get(S.banner));}
+ const bannerKey=S.col+':'+S.banner;
+ if(rendered.banner!==bannerKey){rendered.banner=bannerKey;
  $('ban').innerHTML=byR('SR').map(c=>`<button class="chip card ${c.id===S.banner?'on':''}" data-id="${c.id}">${cardFace(c)}</button>`).join('');
- [...$('ban').children].forEach(b=>b.onclick=()=>{S.banner=+b.dataset.id;save();render()});
- const cc=C.filter(c=>c.col===VC()),own=cc.filter(c=>S.inv[c.id]).length;
- $('pcount').textContent=own+'/'+cc.length;$('pname').textContent=COLS.find(x=>x.id===VC()).name;$('pbar').style.width=(own/cc.length*100)+'%';
+ [...$('ban').children].forEach(b=>b.onclick=()=>{S.banner=+b.dataset.id;save();render()});}
+ const cc=colCards(VC()),own=cc.filter(c=>S.inv[c.id]).length;
+ $('pcount').textContent=own+'/'+cc.length;$('pname').textContent=colsById.get(VC()).name;$('pbar').style.width=(own/cc.length*100)+'%';
  [...$('filt').children].forEach(b=>b.classList.toggle('on',b.dataset.f===filt));$('shards').textContent='Осколки: '+S.shards+' ✦';
- $('grid').innerHTML=C.filter(c=>c.col===VC()&&(filt==='all'||c.r===filt)).sort((a,b)=>['SR','R','N'].indexOf(a.r)-['SR','R','N'].indexOf(b.r)).map(c=>`<button class="cell ${c.r} ${S.inv[c.id]?'':'lock'}" data-id="${c.id}"><div class="card">${cardFace(c,{locked:!S.inv[c.id]})}</div>${S.inv[c.id]?`<span class="cnt">${S.inv[c.id]}</span>`:''}</button>`).join('');
- [...$('grid').children].forEach(b=>b.onclick=()=>detail(+b.dataset.id));
+ const gridKey=VC()+':'+filt+':'+cc.map(c=>S.inv[c.id]||0).join(',');
+ if(rendered.grid!==gridKey){rendered.grid=gridKey;
+ $('grid').innerHTML=cc.filter(c=>filt==='all'||c.r===filt).sort((a,b)=>['SR','R','N'].indexOf(a.r)-['SR','R','N'].indexOf(b.r)).map(c=>`<button class="cell ${c.r} ${S.inv[c.id]?'':'lock'}" data-id="${c.id}"><div class="card">${cardFace(c,{locked:!S.inv[c.id],lazy:true})}</div>${S.inv[c.id]?`<span class="cnt">${S.inv[c.id]}</span>`:''}</button>`).join('');
+ [...$('grid').children].forEach(b=>b.onclick=()=>detail(+b.dataset.id));}
  const tp=S.st.N+S.st.R+S.st.SR+S.st.M,pc=k=>S.st[k]+' ('+(tp?(S.st[k]/tp*100).toFixed(1):'0')+'%)';
  $('stats').innerHTML='Статистика круток: '+tp+' · N '+pc('N')+' · R '+pc('R')+' · SR '+pc('SR')+' · 💰 '+pc('M');
 
  const tot=S.test?1e9:S.gems+S.free*CS(S.col).price;const done=isDone(S.col)&&!S.test,cs=colCards(S.col);
- $('colname').textContent=COLS.find(x=>x.id===S.col).name;$('colprog').textContent=cs.filter(c=>S.inv[c.id]).length+'/'+cs.length+(isDone(S.col)?' ✔':'');
+ $('colname').textContent=colsById.get(S.col).name;$('colprog').textContent=cs.filter(c=>S.inv[c.id]).length+'/'+cs.length+(isDone(S.col)?' ✔':'');
  $('p1').innerHTML=done?esc(L.collectionDone)+'<small>выбери другую в меню ☰</small>':esc(L.pull)+'<small>'+CS(S.col).price+' 💎</small>';$('p1').classList.toggle('sm',done);
  $('p1').disabled=tot<CS(S.col).price||done;
  const dups=C.reduce((s,c)=>s+Math.max(0,(S.inv[c.id]||0)-1)*PRICE[c.r],0);
@@ -296,6 +305,7 @@ function applyTheme(){
  for(const key of ['background','pill','button'])r.setProperty('--art-'+key,t[key]?'url('+JSON.stringify(t[key])+')':'none');
 }
 function renderCustomUI(){
+ if(rendered.customCol===S.col)return;rendered.customCol=S.col;
  $('t1').textContent=L.summon;$('t3').textContent=L.help;$('t4').textContent=L.game2048;$('t4').hidden=!CONFIG.game2048.enabled;
  $('close').textContent=L.close;$('conv').hidden=!CONFIG.mini.enabled;$('mute').hidden=!CONFIG.effects.sound;
  const vars={...CS(S.col),dailyFree:E.dailyFree,startingGems:E.startingGems,dailyLimit:CONFIG.game2048.dailyLimit,miniBase:CONFIG.mini.baseCost,miniStep:CONFIG.mini.costStep,miniGuarantee:CONFIG.mini.guaranteeEvery,miniMin:CONFIG.mini.guaranteeMin};

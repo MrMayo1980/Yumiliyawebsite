@@ -7,10 +7,10 @@ const source=await readFile(new URL('../gacha.js',import.meta.url),'utf8');
 const original=JSON.parse(await readFile(new URL('../data/gacha.json',import.meta.url),'utf8'));
 async function boot(config,{preview=false,saved=null}={}){
  const nodes=new Map(),store=new Map();if(saved)store.set('gacha3',JSON.stringify(saved));
- const node=()=>({children:[],style:{setProperty(){}},classList:{add(){},remove(){},toggle(){},contains(){return false;}},appendChild(n){this.children.push(n);},append(...n){this.children.push(...n);},replaceChildren(...n){this.children=n;},querySelector(){return node();},addEventListener(){},removeEventListener(){},parentNode:{style:{}},textContent:'',innerHTML:'',offsetWidth:300,clientWidth:300});
+ const node=()=>({children:[],style:{setProperty(){}},classList:{add(){},remove(){},toggle(){},contains(){return false;}},appendChild(n){this.children.push(n);},append(...n){this.children.push(...n);},replaceChildren(...n){this.children=n;},querySelector(){return node();},addEventListener(){},removeEventListener(){},parentNode:{style:{}},textContent:'',htmlWrites:0,_html:'',get innerHTML(){return this._html;},set innerHTML(value){this._html=value;this.htmlWrites++;},offsetWidth:300,clientWidth:300});
  const document={getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);},createElement:node,documentElement:node(),addEventListener(){},querySelector:node,body:node()};
  const context=vm.createContext({normalizeFrameSettings,cardFrame,framePreset,photoStyle,document,location:new URL('http://localhost/gacha_game.html'+(preview?'?preview=1':'')),URLSearchParams,fetch:async()=>({ok:true,json:async()=>structuredClone(config)}),localStorage:{getItem:key=>store.get(key),setItem:(key,val)=>store.set(key,val)},setTimeout:()=>1,clearTimeout(){},requestAnimationFrame:()=>1,cancelAnimationFrame(){},addEventListener(){},innerWidth:390,innerHeight:800,console,window:{},navigator:{},DOMMatrix:class{m41=0},getComputedStyle:()=>({transform:'none'})});
- await vm.runInContext(source.replace(/^import[^\n]*\n/, '').replace('applyTheme();g48Load();daily();render();','globalThis.game={pull,doPull,doMini,state:()=>S,config:CONFIG,tab,cardFace,resultHtml,itemHtml,detail};applyTheme();g48Load();daily();render();'),context);
+ await vm.runInContext(source.replace(/^import[^\n]*\n/, '').replace('applyTheme();g48Load();daily();render();','globalThis.game={pull,doPull,doMini,state:()=>S,config:CONFIG,render,tab,cardFace,resultHtml,itemHtml,detail};applyTheme();g48Load();daily();render();'),context);
  assert.ok(context.game,'Game booted successfully');return {game:context.game,nodes,store};
 }
 test('custom starting balance, daily bonus, labels, mini-game switches and preview storage reach the game',async()=>{
@@ -59,4 +59,14 @@ test('photo framing reaches every unlocked card view and never changes locked ca
  }
  const locked=game.cardFace(card,{locked:true});assert.ok(!locked.includes('--photo-'));assert.ok(!locked.includes(card.img));
  assert.equal(game.state().inv[card.id],2);
+});
+
+test('unrelated game updates preserve card DOM and open help; inventory changes still refresh the album',async()=>{
+ const config=structuredClone(original);config.cols[0].settings.pityS=1;
+ const {game,nodes}=await boot(config),grid=nodes.get('grid'),hero=nodes.get('hero'),ban=nodes.get('ban'),help=nodes.get('v3').children[0];help.open=true;
+ const writes=[grid.htmlWrites,hero.htmlWrites,ban.htmlWrites];
+ nodes.get('mute').onclick();game.render();
+ assert.deepEqual([grid.htmlWrites,hero.htmlWrites,ban.htmlWrites],writes);assert.equal(nodes.get('v3').children[0],help);assert.equal(help.open,true);
+ const result=game.pull();game.render();assert.equal(grid.htmlWrites,writes[0]+1);assert.match(grid.innerHTML,new RegExp(result.c.name));assert.equal(hero.htmlWrites,writes[1]);assert.equal(ban.htmlWrites,writes[2]);
+ game.state().vcol=config.cols[1].id;game.render();assert.equal(grid.htmlWrites,writes[0]+2);assert.equal(nodes.get('pname').textContent,config.cols[1].name);
 });

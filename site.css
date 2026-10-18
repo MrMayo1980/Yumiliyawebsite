@@ -15,3 +15,6 @@ body[data-hover-zoom="false"] .item:hover img,body[data-hover-zoom="false"] .ite
 @media(max-width:720px){#gallery{column-count:var(--site-small-columns,2)}body[data-gallery-layout="grid"] #gallery{grid-template-columns:repeat(var(--site-small-columns,2),minmax(0,1fr))}}
 @media(max-width:480px){#gallery{column-count:var(--site-mobile-columns,1)}body[data-gallery-layout="grid"] #gallery{grid-template-columns:repeat(var(--site-mobile-columns,1),minmax(0,1fr))}.site-nav{gap:8px}.site-nav a{padding:.65rem 1rem;font-size:.65rem}}
 @media(prefers-reduced-motion:reduce){.item img,.item video{transition:none}.item:hover img,.item:hover video{transform:none}}
+
+/* Let intrinsic media dimensions replace the reserved lazy-loading placeholder. */
+.item img,.item video{height:auto}

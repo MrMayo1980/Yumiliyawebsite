@@ -116,3 +116,9 @@ The admin’s **Оформление → Рамки карт** section and indiv
 `frames.js` migrates older drafts once; intentionally cleared frames stay cleared afterwards. The library is shared by the studio, game and publication validator.
 
 Card creation and editing also include **Положение фото**: zoom (1–4×), horizontal/vertical offsets (−100% to 100%), synchronized sliders/numeric fields and a reset button. Adjustments are saved per card and used in the studio preview, summon/banner, reel, results, collection and card details. Locked card backs keep their normal appearance.
+
+### Performance
+
+Opening the gacha directly defers the archive request until the archive is opened. Images reserve layout space and decode asynchronously; archive videos receive sources near the viewport, autoplay only while visible, and pause when the page, archive or lightbox hides them. Filters release old video buffers. The admin archive uses `preload="none"`.
+
+Photo controls update the existing preview styles at most once per animation frame. Game card lookups use collection/rarity indexes; unchanged hero, banner, album and help content keep their existing DOM. Muted reel animations skip audio-only per-frame layout reads. Cards in the album and studio use lazy image loading.

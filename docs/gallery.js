@@ -9,3 +9,21 @@ export function mergeGallery(legacy,overlay){
 }
 export function mediaType(item){if(['image','gif','video'].includes(item.type))return item.type;return /\.(mp4|mov|webm|ogg)(\?|$)/i.test(item.url)?'video':/\.gif(\?|$)/i.test(item.url)?'gif':'image';}
 export function safeMediaUrl(url){return localMediaUrl(url);}
+
+// Only nearby archive videos get a source; only visible videos may autoplay.
+export function createVideoLoader({isActive,autoplay,Observer=globalThis.IntersectionObserver}){
+ const sources=new Map(),visible=new Set();
+ const load=video=>{const src=sources.get(video);if(src&&video.getAttribute('src')!==src){video.preload='metadata';video.src=src;video.load();}};
+ const updateVideo=video=>{
+  const playing=isActive()&&visible.has(video)&&autoplay();
+  if(playing){load(video);if(video.paused)video.play().catch(()=>{});}
+  else if(!video.paused)video.pause();
+ };
+ const nearby=Observer?new Observer(entries=>{for(const e of entries)if(e.isIntersecting&&isActive()){load(e.target);nearby.unobserve(e.target);}},{rootMargin:'300px'}):null;
+ const playback=Observer?new Observer(entries=>{for(const e of entries){if(e.isIntersecting)visible.add(e.target);else visible.delete(e.target);updateVideo(e.target);}},{threshold:0.01}):null;
+ return {
+  observe(video,src){sources.set(video,src);video.preload='none';if(nearby){nearby.observe(video);playback.observe(video);}else{video.src=src;}},
+  update(){for(const video of sources.keys())updateVideo(video);},
+  reset(){nearby?.disconnect();playback?.disconnect();for(const video of sources.keys()){video.pause();if(video.hasAttribute('src')){video.removeAttribute('src');video.load();}}sources.clear();visible.clear();}
+ };
+}
