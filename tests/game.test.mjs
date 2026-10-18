@@ -10,7 +10,7 @@ async function boot(config,{preview=false,saved=null,fetcher=null,random=null,se
  const node=()=>({children:[],style:{setProperty(){}},classList:{values:new Set(),add(k){this.values.add(k);},remove(k){this.values.delete(k);},toggle(){},contains(k){return this.values.has(k);}},appendChild(n){this.children.push(n);},append(...n){this.children.push(...n);},replaceChildren(...n){this.children=n;},querySelector(){return node();},addEventListener(){},removeEventListener(){},parentNode:{style:{}},textContent:'',htmlWrites:0,_html:'',get innerHTML(){return this._html;},set innerHTML(value){this._html=value;this.htmlWrites++;},offsetWidth:300,clientWidth:300});
  const document={hidden:false,getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);},createElement:node,documentElement:node(),addEventListener:(name,fn)=>documentEvents.set(name,fn),querySelector:node,body:node()};
  const gameLocation=new URL('http://localhost/gacha_game.html'+(preview?'?preview=1':''));gameLocation.reload=()=>reloads++;
- const context=vm.createContext({normalizeFrameSettings,cardFrame,framePreset,photoStyle,document,location:gameLocation,URLSearchParams,sessionStorage:{getItem:key=>sessionStore.get(key),setItem:(key,value)=>sessionStore.set(key,value),removeItem:key=>sessionStore.delete(key)},fetch:fetcher|| (async()=>({ok:true,json:async()=>structuredClone(config)})),localStorage:{getItem:key=>store.get(key),setItem:(key,val)=>store.set(key,val)},setTimeout:(fn,delay)=>{const id=++nextTimer;timers.set(id,{fn,delay});return id;},clearTimeout:id=>timers.delete(id),requestAnimationFrame:()=>1,cancelAnimationFrame(){},addEventListener:(name,fn)=>events.set(name,fn),innerWidth:390,innerHeight:800,console,window:{},navigator:{},DOMMatrix:class{m41=0},getComputedStyle:()=>({transform:'none'})});
+ const context=vm.createContext({normalizeFrameSettings,cardFrame,framePreset,photoStyle,document,location:gameLocation,URLSearchParams,sessionStorage:{getItem:key=>sessionStore.get(key),setItem:(key,value)=>sessionStore.set(key,value),removeItem:key=>sessionStore.delete(key)},fetch:fetcher|| (async()=>({ok:true,json:async()=>structuredClone(config)})),localStorage:{getItem:key=>store.get(key),setItem:(key,val)=>store.set(key,val)},setTimeout:(fn,delay)=>{const id=++nextTimer;timers.set(id,{fn,delay});return id;},clearTimeout:id=>timers.delete(id),requestAnimationFrame:()=>1,cancelAnimationFrame(){},addEventListener:(name,fn)=>{const previous=events.get(name);events.set(name,previous?(event)=>{previous(event);fn(event);}:fn);},innerWidth:390,innerHeight:800,console,window:{},navigator:{},DOMMatrix:class{m41=0},getComputedStyle:()=>({transform:'none'})});
  if(random!==null)vm.runInContext('Math.random=()=>'+random,context);
  await vm.runInContext(source.replace(/^import[^\n]*\n/, '').replace('applyTheme();g48Load();daily();render();','globalThis.game={pull,doPull,doMini,state:()=>S,config:CONFIG,render,tab,cardFace,resultHtml,itemHtml,detail,filler};applyTheme();g48Load();daily();render();'),context);
  assert.ok(context.game,'Game booted successfully');return {game:context.game,nodes,store,document,events,documentEvents,timers,sessionStore,reloads:()=>reloads};
@@ -101,4 +101,16 @@ test('a recreated card uses a fresh ID, stays locked and awards NEW only after a
  const {game,nodes}=await boot(config,{saved,random:.9});
  const slot=nodes.get('grid').innerHTML.match(/<button class="cell N lock" data-id="20">[\s\S]*?<\/button>/)?.[0];assert.ok(slot);assert.ok(!slot.includes('recreated.jpg'));assert.equal(game.state().inv[20],undefined);assert.equal(game.state().inv[19],3);assert.equal(game.state().inv[7],2);assert.equal(game.state().gems,42);
  const result=game.pull();assert.equal(result.c.id,20);assert.equal(result.isNew,true);assert.equal(result.sh,0);game.render();assert.match(nodes.get('grid').innerHTML,/recreated.jpg/);assert.equal(game.state().inv[20],1);assert.equal(game.state().inv[7],2);assert.equal(game.state().shards,9);
+});
+
+test('admin balance changes update an open game without touching inventory or preview progress',async()=>{
+ const saved={gems:42,free:3,day:'2099-1-1',p:{},inv:{7:2},shards:9,mini:{n:0,g:0},st:{N:0,R:0,SR:0,M:0}};
+ const app=await boot(original,{saved});
+ app.events.get('storage')({key:'yumiliya-local-balance',newValue:JSON.stringify({gems:12345})});
+ assert.equal(app.game.state().gems,12345);assert.equal(app.nodes.get('gems').textContent,12345);assert.equal(app.game.state().inv[7],2);assert.equal(app.game.state().shards,9);
+ for(const gems of [-1,1.5,'500'])app.events.get('storage')({key:'yumiliya-local-balance',newValue:JSON.stringify({gems})});
+ assert.equal(app.game.state().gems,12345);
+ app.events.get('storage')({key:'yumiliya-local-balance',newValue:'invalid'});assert.equal(app.game.state().gems,12345);
+ const preview=await boot(original,{preview:true});const before=preview.game.state().gems;
+ preview.events.get('storage')?.({key:'yumiliya-local-balance',newValue:JSON.stringify({gems:98765})});assert.equal(preview.game.state().gems,before);
 });

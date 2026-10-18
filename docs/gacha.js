@@ -309,6 +309,10 @@ function tab(n){if(n===4&&!CONFIG.game2048.enabled)n=1;currentTab=n;[1,2,3,4].fo
 applyTheme();g48Load();daily();render();
 try{const remembered=Number(sessionStorage.getItem(STORAGE+'_catalog_tab'));sessionStorage.removeItem(STORAGE+'_catalog_tab');if([1,2,3,4].includes(remembered))tab(remembered);}catch{}
 watchCatalog();
+if(!preview)addEventListener('storage',event=>{
+ if(event.key!=='yumiliya-local-balance'||!event.newValue)return;
+ try{const {gems}=JSON.parse(event.newValue);if(Number.isSafeInteger(gems)&&gems>=0){S.gems=gems;render();}}catch{}
+});
 
 function watchCatalog(){
  if(preview)return;
