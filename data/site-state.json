@@ -1,6 +1,6 @@
 {
-  "revision": 6,
-  "updatedAt": "2026-10-18T19:39:05.794Z",
+  "revision": 7,
+  "updatedAt": "2026-10-18T19:47:04.913Z",
   "published": {
     "config": {
       "cols": [
@@ -325,6 +325,22 @@
             "x": 0,
             "y": 0
           }
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 0,
+            "y": 0
+          },
+          "frame": "assets/gacha/24c240745ffdf28311e7.webp",
+          "frameEnabled": true,
+          "id": 19,
+          "col": "mb",
+          "r": "N",
+          "name": "Новая карта",
+          "img": "assets/media/1f5cd013-71a8-433e-a69a-fad3b81cbb19.jpg",
+          "enabled": true,
+          "weight": 1
         }
       ],
       "back": "assets/gacha/67a69b8b0bd479bbe8c8.webp",
