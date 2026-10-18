@@ -1,3 +1,4 @@
+import {validateCardTransition} from '../card-ids.js';
 import {validateDocument} from '../validation.js';
 const problem=(message,status=400)=>Object.assign(new Error(message),{status});
 export class GithubPublisher{
@@ -25,6 +26,7 @@ export class GithubPublisher{
  async publish(document,revision,files){
   const doc=validateDocument(document,true),head=await this.head(),current=await this.readState(head);
   if(current.revision!==revision)throw problem('Сайт уже изменён в другой вкладке или на другом устройстве. Экспортируйте черновик и загрузите актуальную версию.',409);
+  validateCardTransition(current.published.config,doc.config);
   const parent=await this.request(this.base+'/git/commits/'+head),updatedAt=new Date().toISOString(),state={revision:revision+1,updatedAt,published:doc};
   const tree=[];
   for(const file of files){

@@ -94,3 +94,11 @@ test('publication notice retries while Pages is building and picks up the new ca
  app.events.get('storage')({key:'yumiliya-publication',newValue:JSON.stringify({revision:5})});await new Promise(setImmediate);assert.equal(app.reloads(),0);assert.equal(calls,2);
  const retry=[...app.timers.values()].find(t=>t.delay===3000);assert.ok(retry);current=addedCardConfig();retry.fn();await new Promise(setImmediate);assert.equal(app.reloads(),1);
 });
+
+test('a recreated card uses a fresh ID, stays locked and awards NEW only after a real pull',async()=>{
+ const config=structuredClone(original);config.cards.push({...structuredClone(config.cards[0]),id:20,name:'Recreated card',img:'assets/media/recreated.jpg'});
+ const saved={col:'mb',gems:42,free:3,day:'2099-1-1',p:{},inv:{7:2,19:3},shards:9,banner:7,mini:{n:0,g:0},st:{N:3,R:0,SR:0,M:0}};
+ const {game,nodes}=await boot(config,{saved,random:.9});
+ const slot=nodes.get('grid').innerHTML.match(/<button class="cell N lock" data-id="20">[\s\S]*?<\/button>/)?.[0];assert.ok(slot);assert.ok(!slot.includes('recreated.jpg'));assert.equal(game.state().inv[20],undefined);assert.equal(game.state().inv[19],3);assert.equal(game.state().inv[7],2);assert.equal(game.state().gems,42);
+ const result=game.pull();assert.equal(result.c.id,20);assert.equal(result.isNew,true);assert.equal(result.sh,0);game.render();assert.match(nodes.get('grid').innerHTML,/recreated.jpg/);assert.equal(game.state().inv[20],1);assert.equal(game.state().inv[7],2);assert.equal(game.state().shards,9);
+});

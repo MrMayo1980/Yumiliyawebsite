@@ -10,14 +10,14 @@ import {buildPages,PUBLIC_FILES} from '../scripts/build-pages.mjs';
 import {DEFAULT_APPEARANCE} from '../appearance.js';
 const config=JSON.parse(await readFile(new URL('../data/gacha.json',import.meta.url),'utf8'));
 const document={config,appearance:structuredClone(DEFAULT_APPEARANCE),gallery:{items:[],deleted:[]}};
-function fakeGithub({revision=0,allowPush=true,failUpdate=false}={}){
+function fakeGithub({revision=0,allowPush=true,failUpdate=false,stateDocument=document}={}){
  const requests=[];let i=0;
  const fetcher=async(url,options)=>{
   const path=new URL(url).pathname,data=options.body?JSON.parse(options.body):null;requests.push({path,options,data});let body,status=200;
   if(path==='/user')body={login:'MrMayo1980'};
   else if(path.endsWith('/Yumiliyawebsite'))body={permissions:{push:allowPush}};
   else if(path.includes('/git/ref/'))body={object:{sha:'head-sha'}};
-  else if(path.includes('/contents/'))body={content:Buffer.from(JSON.stringify({revision,published:document})).toString('base64')};
+  else if(path.includes('/contents/'))body={content:Buffer.from(JSON.stringify({revision,published:stateDocument})).toString('base64')};
   else if(path.endsWith('/git/commits/head-sha'))body={tree:{sha:'base-tree'}};
   else if(path.endsWith('/git/blobs'))body={sha:'blob-'+(++i)};
   else if(path.endsWith('/git/trees'))body={sha:'new-tree'};
@@ -65,4 +65,11 @@ test('fresh published reads bypass a previously cached catalog and the CDN URL',
  const originalFetch=globalThis.fetch,requests=[];let revision=1;
  globalThis.fetch=async url=>{requests.push(url);return Response.json({revision});};
  try{assert.equal((await loadPublished({fresh:true})).revision,1);revision=2;assert.equal((await loadPublished()).revision,1);assert.equal((await loadPublished({fresh:true})).revision,2);assert.equal(requests.length,2);assert.ok(requests.every(url=>url.startsWith('data/site-state.json?t=')));}finally{globalThis.fetch=originalFetch;}
+});
+
+test('publication rejects an ID previously retired from the card catalog',async()=>{
+ const previous=structuredClone(document);previous.config.nextCardId=21;
+ const next=structuredClone(document);next.config.cards.push({...next.config.cards[0],id:19,name:'Reused ID'});
+ const {requests,fetcher}=fakeGithub({stateDocument:previous}),client=new GithubPublisher({owner:'MrMayo1980',repo:'Yumiliyawebsite'},fetcher);client.token='test-only';
+ await assert.rejects(client.publish(next,0,[]),error=>error.status===422);assert.ok(!requests.some(request=>request.options.method==='POST'));
 });

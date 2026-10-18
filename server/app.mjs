@@ -1,3 +1,4 @@
+import {validateCardTransition} from '../card-ids.js';
 import {readFile,writeFile,mkdir,rename,readdir,stat} from 'node:fs/promises';
 import {createReadStream} from 'node:fs';
 import {resolve,join,extname,basename} from 'node:path';
@@ -54,7 +55,7 @@ export async function createApp({root=process.cwd(),dataDir=resolve(root,'.data'
           const data=await parse(req);const doc=validateDocument(data.document);return await mutate(async()=>{if(data.expectedDraftVersion!==state.draftVersion)throw error('Черновик изменён в другой вкладке. Сначала экспортируйте свои изменения и загрузите актуальную версию.',409);await persist({...state,draft:doc,draftVersion:state.draftVersion+1});json(res,200,{draftVersion:state.draftVersion});});
         }
         if(path==='/api/admin/publish'&&req.method==='POST'){
-          const data=await parse(req);return await mutate(async()=>{if(data.expectedRevision!==state.revision||data.expectedDraftVersion!==state.draftVersion)throw error('Данные изменились. Обновите панель перед публикацией.',409);validateDocument(state.draft,true);const next={...state,revision:state.revision+1,published:structuredClone(state.draft),updatedAt:new Date().toISOString()};await atomic(join(dataDir,'history',`${state.revision}.json`),{revision:state.revision,document:state.published,updatedAt:state.updatedAt});await persist(next);json(res,200,{revision:state.revision,updatedAt:state.updatedAt});});
+          const data=await parse(req);return await mutate(async()=>{if(data.expectedRevision!==state.revision||data.expectedDraftVersion!==state.draftVersion)throw error('Данные изменились. Обновите панель перед публикацией.',409);validateDocument(state.draft,true);validateCardTransition(state.published.config,state.draft.config);const next={...state,revision:state.revision+1,published:structuredClone(state.draft),updatedAt:new Date().toISOString()};await atomic(join(dataDir,'history',`${state.revision}.json`),{revision:state.revision,document:state.published,updatedAt:state.updatedAt});await persist(next);json(res,200,{revision:state.revision,updatedAt:state.updatedAt});});
         }
         if(path==='/api/admin/history'&&req.method==='GET'){const names=(await readdir(join(dataDir,'history'))).filter(n=>/^\d+\.json$/.test(n)).sort((a,b)=>parseInt(b)-parseInt(a)).slice(0,50);const history=[];for(const n of names){const h=JSON.parse(await readFile(join(dataDir,'history',n),'utf8'));history.push({revision:h.revision,updatedAt:h.updatedAt});}return json(res,200,history);}
         if(/^\/api\/admin\/history\/\d+$/.test(path)&&req.method==='GET'){try{return json(res,200,JSON.parse(await readFile(join(dataDir,'history',basename(path)+'.json'),'utf8')));}catch(e){if(e.code==='ENOENT')throw error('Версия не найдена.',404);throw e;}}
@@ -65,7 +66,7 @@ export async function createApp({root=process.cwd(),dataDir=resolve(root,'.data'
       if(!['GET','HEAD'].includes(req.method))throw error('Метод не поддерживается.',405);
       const file=path==='/'?'index.html':decodeURIComponent(path.slice(1));
       if(file==='data/gacha.json')return json(res,200,state.published.config);
-      const allowed=['frames.js','frames.css','hosting.js','validation.js','draft-sync.js','pages-admin.js','appearance.js','site.css','index.html','index.js','data/legacy-gallery.json','admin.html','admin.js','admin.css','gallery.js','gacha_game.html','gacha.js'];
+      const allowed=['frames.js','frames.css','hosting.js','validation.js','draft-sync.js','card-ids.js','pages-admin.js','appearance.js','site.css','index.html','index.js','data/legacy-gallery.json','admin.html','admin.js','admin.css','gallery.js','gacha_game.html','gacha.js'];
       if(!allowed.includes(file)&&!/^(assets\/(?:gacha|media)|uploads)\/[a-zA-Z0-9_-]+\.(webp|png|jpe?g|gif|avif|mp4|webm|mov|ogg)$/i.test(file))throw error('Файл не найден.',404);
       const full=join(root,file);let info;try{info=await stat(full);}catch{throw error('Файл не найден.',404);}if(!info.isFile())throw error('Файл не найден.',404);
       res.writeHead(200,{'Content-Type':MIME[extname(full)]||'application/octet-stream','Content-Length':info.size,'Cache-Control':file.startsWith('assets/')||file.startsWith('uploads/')?'public, max-age=31536000, immutable':'no-cache'});if(req.method==='HEAD')return res.end();createReadStream(full).pipe(res);

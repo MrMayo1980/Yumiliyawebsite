@@ -1,3 +1,4 @@
+import {normalizeCardIds} from './card-ids.js';
 import {normalizeFrameSettings} from './frames.js';
 import {DEFAULT_APPEARANCE,DISPLAY_FONTS} from './appearance.js';
 export function validateDocument(doc, publish = false) {
@@ -21,6 +22,7 @@ export function validateDocument(doc, publish = false) {
   if(c.version!==1)fail('Неизвестная версия настроек.');text(c.title,'Название',100);if(!c.title.trim())fail('Укажите название игры.');image(c.back,'Рубашка');
   const settings=(s,n)=>{obj(s,n);for(const k of ['price','pityR','pityS','banner'])num(s[k],`${n}: ${k}`,0,1000000,true);for(const k of ['sr','r','money','bannerRate'])num(s[k],`${n}: ${k}`,0,100);bool(s.bannerGuarantee,n);if(s.sr+s.r+s.money>100.000001)fail(`${n}: сумма шансов превышает 100%.`);};
   settings(c.defaults,'Базовые шансы');list(c.cols,'Коллекции',200);list(c.cards,'Карты',3000);
+  if(c.nextCardId!==undefined)num(c.nextCardId,'Следующий ID карты',1,Number.MAX_SAFE_INTEGER,true);
   const ids=new Set(),cardIds=new Set();
   for(const col of c.cols){obj(col,'Коллекция');text(col.id,'ID коллекции',64);if(!/^[a-zA-Z0-9_-]+$/.test(col.id)||ids.has(col.id))fail('ID коллекций должны быть уникальными (латиница, цифры, _ и -).');ids.add(col.id);text(col.name,'Название коллекции',200);if(!col.name.trim())fail('Укажите название коллекции.');if(col.desc!==undefined)text(col.desc,'Описание',2000);if(col.cover)image(col.cover,'Обложка');bool(col.enabled,'Коллекция');settings(col.settings,col.name);}
   for(const card of c.cards){obj(card,'Карта');num(card.id,'ID карты',1,Number.MAX_SAFE_INTEGER,true);if(cardIds.has(card.id))fail('ID карт должны быть уникальны.');cardIds.add(card.id);if(!ids.has(card.col))fail('Карта ссылается на неизвестную коллекцию.');text(card.name,'Название карты',200);if(!card.name.trim())fail('Укажите название карты.');if(!['N','R','SR'].includes(card.r))fail('Неизвестная редкость карты.');image(card.img,'Изображение карты',!publish);num(card.weight,'Вес карты',0.001,1000000);bool(card.enabled,'Карта');if(card.frame!==undefined)frameImage(card.frame,'Рамка карты');if(card.frameEnabled!==undefined)bool(card.frameEnabled,'Рамка карты');if(card.photo!==undefined){obj(card.photo,'Положение фото');num(card.photo.zoom,'Масштаб фото',1,4);num(card.photo.x,'Положение фото X',-100,100);num(card.photo.y,'Положение фото Y',-100,100);}}
@@ -59,6 +61,6 @@ export function validateDocument(doc, publish = false) {
   list(doc.gallery.items,'Архив',10000);list(doc.gallery.deleted,'Скрытые файлы',20000);
   const urls=new Set();for(const item of doc.gallery.items){obj(item,'Файл');image(item.url,'Ссылка файла');if(urls.has(item.url))fail('В архиве есть повторяющиеся ссылки.');urls.add(item.url);if(!['image','gif','video'].includes(item.type))fail('Неизвестный тип файла.');text(item.name||'','Имя файла',300);}
   for(const url of doc.gallery.deleted)image(url,'Скрытая ссылка');
-  const normalized=structuredClone(doc);normalizeFrameSettings(normalized.config);
+  const normalized=structuredClone(doc);normalizeFrameSettings(normalized.config);normalizeCardIds(normalized.config);
   return normalized;
 }

@@ -4,6 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {synchronizeDraft} from '../draft-sync.js';
 import {validateDocument} from '../validation.js';
 const current=JSON.parse(await readFile(new URL('../data/site-state.json',import.meta.url),'utf8')).published;
+current.config.cards=current.config.cards.filter(card=>card.id<=18);current.config.cards.push({...structuredClone(current.config.cards[0]),id:19,name:'Published new card'});delete current.config.nextCardId;
 const base=()=>{const doc=structuredClone(current);doc.config.cards=doc.config.cards.filter(card=>card.id<=18);return doc;};
 const published=()=>({revision:5,published:structuredClone(current)});
 test('legacy stale draft receives published cards and keeps unrelated unpublished edits',()=>{
