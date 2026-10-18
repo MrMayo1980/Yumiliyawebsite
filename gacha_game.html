@@ -169,6 +169,16 @@ body::before{background-image:var(--art-background)}
 .ov{background:radial-gradient(ellipse at top,var(--panel),var(--bg))}
 .g48bg i,.it{background:var(--bg)}.it{border-radius:var(--card-radius)}
 .card img,.cell.lock{border-radius:var(--card-radius)}
+
+/* Optional decorative frames are separate from the card artwork. */
+.card-face{position:relative;display:block;width:100%;height:100%;aspect-ratio:2/3;isolation:isolate}
+.card-face>.card-art,.card-face>.card-frame{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain}
+.card-face.has-frame>.card-art{inset:var(--frame-inset,4%);width:calc(100% - 2 * var(--frame-inset,4%));height:calc(100% - 2 * var(--frame-inset,4%));object-fit:cover;border-radius:var(--card-radius);filter:none}
+.card-face>.card-frame{z-index:1;border-radius:0;pointer-events:none;filter:none}
+.big .card-face{height:auto}
+.R .has-frame{filter:drop-shadow(0 0 6px var(--r))}.SR .has-frame{filter:drop-shadow(0 0 8px var(--sr))}
+.has-frame>.card-art,.has-frame>.card-frame{filter:none!important}
+.card-face.concealed{filter:brightness(.15) grayscale(1)}
 </style></head><body><div class="app">
 <div class="top"><div class="pill"><span class="ic">💎</span><b id="gems"></b></div><div class="pill" title="бесплатные крутки"><span class="ic">🎟</span><b id="fr"></b></div><button class="mute" id="mute">🔊</button><button class="mute" id="bk">💾</button></div>
 <div class="tabs"><button id="t1" class="on">Призыв</button><button id="t2">Коллекция</button><button id="t4">2048</button><button id="t3">Справка</button></div>

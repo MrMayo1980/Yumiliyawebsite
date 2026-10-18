@@ -89,7 +89,7 @@ function doMini(){
  S.gems+=amt;save();render();rollMode='mini';showRes([{c:null,money:amt}]);
 }
 const PITCH=110,TILE=52;
-const itemHtml=o=>o.c?`<div class="it ${o.c.r}"><img src="${o.c.img}"></div>`:`<div class="it M"><div class="coin2">💰<b>+${o.money}</b></div></div>`;
+const itemHtml=o=>o.c?`<div class="it ${o.c.r}">${cardFace(o.c)}</div>`:`<div class="it M"><div class="coin2">💰<b>+${o.money}</b></div></div>`;
 function filler(){const x=Math.random(),hS=byR('SR').length,hR=byR('R').length;
  const r=x<.05&&hS?'SR':x<.23&&hR?'R':x<.40?'M':'N';
  if(r==='M')return{c:null,money:pick(E.moneyPrizes)};
@@ -107,10 +107,14 @@ function spin(res,dur){return new Promise(done=>{
  st.addEventListener('transitionend',fin);const to=setTimeout(fin,dur*1000+600);
  skipFn=()=>{st.style.transition='none';st.style.transform='translateX('+target+'px)';fin()};
 })}
+function cardFace(card,{locked=false,concealed=false}={}){
+ const frame=!locked&&card.frameEnabled!==false?(card.frame||CONFIG.theme.frames?.[card.r]||''):'';
+ return `<span class="card-face${frame?' has-frame':''}${concealed?' concealed':''}"><img class="card-art" src="${esc(locked?BACK:card.img)}" alt="${esc(locked||concealed?'Неизвестная карта':card.name)}">${frame?`<img class="card-frame" src="${esc(frame)}" alt="" aria-hidden="true">`:''}</span>`;
+}
 const wait=ms=>new Promise(r=>setTimeout(r,skipAll?0:ms));
 function resultHtml(o){
  if(!o.c)return `<div class="big"><div class="coin" style="height:190px;border-radius:50%">💰<b>+${o.money}</b><span>💎</span></div></div><div class="rline">Монеты <b>+${o.money} 💎</b></div>`;
- return `<div class="big ${o.c.r}"><img src="${o.c.img}"></div><div class="rline"><b>${esc(o.c.name)}</b> · ${o.c.r}${o.isNew?'<span class="tag2">NEW</span>':''}${o.sh?' · +'+o.sh+' ✦':''}</div>`}
+ return `<div class="big ${o.c.r}">${cardFace(o.c)}</div><div class="rline"><b>${esc(o.c.name)}</b> · ${o.c.r}${o.isNew?'<span class="tag2">NEW</span>':''}${o.sh?' · +'+o.sh+' ✦':''}</div>`}
 async function showRes(out){
  skipAll=false;const multi=out.length>1;
  $('ov').classList.add('show');$('res').style.display='none';$('rwrap').style.display='';$('rres').innerHTML='';$('close').style.display='none';$('again').style.display='none';$('obal').textContent='';$('skip').style.display='';
@@ -126,7 +130,7 @@ async function showRes(out){
  }
  if(multi){
   $('rwrap').style.display='none';$('rres').innerHTML='';
-  $('res').innerHTML=out.map(o=>`<div class="tile flip ${o.c?o.c.r:'M'}"><div class="in"><div class="f">${o.c?`<img src="${o.c.img}">`:`<div class="coin">💰<b>+${o.money}</b><span>💎</span></div>`}${o.c&&o.isNew?'<span class="tag">NEW</span>':''}${o.sh?`<span class="sh">+${o.sh}✦</span>`:''}</div></div></div>`).join('');
+  $('res').innerHTML=out.map(o=>`<div class="tile flip ${o.c?o.c.r:'M'}"><div class="in"><div class="f">${o.c?cardFace(o.c):`<div class="coin">💰<b>+${o.money}</b><span>💎</span></div>`}${o.c&&o.isNew?'<span class="tag">NEW</span>':''}${o.sh?`<span class="sh">+${o.sh}✦</span>`:''}</div></div></div>`).join('');
   $('res').style.display='';
  }
  $('skip').style.display='none';$('close').style.display='';
@@ -187,13 +191,13 @@ function render(){
  if(hs&&(!get(S.banner)||get(S.banner).col!==S.col||get(S.banner).r!=='SR'))S.banner=defBanner();
  const lock=!!(hs&&CS(S.col).banner&&byR('SR').some(x=>x.id===CS(S.col).banner));if(lock)S.banner=CS(S.col).banner;$('ban').style.display=lock?'none':'';
  $('hero').style.display=hs?'':'none';$('pity').style.display=hs||hr?'':'none';$('note').style.display=hs?'none':'';$('note').textContent=hr?'В этой коллекции пока нет SR, они появятся позже. Гарант на R работает.':'В этой коллекции пока только обычные карты N. Редкие появятся позже, поэтому гарантов здесь нет.';$('spity').style.display=hs?'':'none';$('fifty').parentNode.style.display=hs?'':'none';
- if(hs)$('hero').innerHTML=`<img src="${get(S.banner).img}">`;
- $('ban').innerHTML=byR('SR').map(c=>`<button class="chip card ${c.id===S.banner?'on':''}" data-id="${c.id}"><img src="${c.img}"></button>`).join('');
+ if(hs)$('hero').innerHTML=cardFace(get(S.banner));
+ $('ban').innerHTML=byR('SR').map(c=>`<button class="chip card ${c.id===S.banner?'on':''}" data-id="${c.id}">${cardFace(c)}</button>`).join('');
  [...$('ban').children].forEach(b=>b.onclick=()=>{S.banner=+b.dataset.id;save();render()});
  const cc=C.filter(c=>c.col===VC()),own=cc.filter(c=>S.inv[c.id]).length;
  $('pcount').textContent=own+'/'+cc.length;$('pname').textContent=COLS.find(x=>x.id===VC()).name;$('pbar').style.width=(own/cc.length*100)+'%';
  [...$('filt').children].forEach(b=>b.classList.toggle('on',b.dataset.f===filt));$('shards').textContent='Осколки: '+S.shards+' ✦';
- $('grid').innerHTML=C.filter(c=>c.col===VC()&&(filt==='all'||c.r===filt)).sort((a,b)=>['SR','R','N'].indexOf(a.r)-['SR','R','N'].indexOf(b.r)).map(c=>`<button class="cell ${c.r} ${S.inv[c.id]?'':'lock'}" data-id="${c.id}"><div class="card"><img src="${S.inv[c.id]?c.img:BACK}"></div>${S.inv[c.id]?`<span class="cnt">${S.inv[c.id]}</span>`:''}</button>`).join('');
+ $('grid').innerHTML=C.filter(c=>c.col===VC()&&(filt==='all'||c.r===filt)).sort((a,b)=>['SR','R','N'].indexOf(a.r)-['SR','R','N'].indexOf(b.r)).map(c=>`<button class="cell ${c.r} ${S.inv[c.id]?'':'lock'}" data-id="${c.id}"><div class="card">${cardFace(c,{locked:!S.inv[c.id]})}</div>${S.inv[c.id]?`<span class="cnt">${S.inv[c.id]}</span>`:''}</button>`).join('');
  [...$('grid').children].forEach(b=>b.onclick=()=>detail(+b.dataset.id));
  const tp=S.st.N+S.st.R+S.st.SR+S.st.M,pc=k=>S.st[k]+' ('+(tp?(S.st[k]/tp*100).toFixed(1):'0')+'%)';
  $('stats').innerHTML='Статистика круток: '+tp+' · N '+pc('N')+' · R '+pc('R')+' · SR '+pc('SR')+' · 💰 '+pc('M');
@@ -210,7 +214,7 @@ function render(){
 }
 function detail(id){
  const c=get(id),own=S.inv[id]||0,p=PRICE[c.r];
- $('dm').innerHTML=`<div class="card"><img src="${c.img}" style="${own?'':'filter:brightness(.15) grayscale(1)'}"></div><div><b>${own?esc(c.name):'???'}</b> · ${c.r}${own?' · ×'+own:''}</div>${own>1?`<button class="btn main" id="sell" style="margin-top:8px">Продать дубликат +${p} 💎</button>`:''}`;
+ $('dm').innerHTML=`<div class="card">${cardFace(c,{concealed:!own})}</div><div><b>${own?esc(c.name):'???'}</b> · ${c.r}${own?' · ×'+own:''}</div>${own>1?`<button class="btn main" id="sell" style="margin-top:8px">Продать дубликат +${p} 💎</button>`:''}`;
  if(own>1)$('sell').onclick=()=>{S.inv[id]--;S.gems+=p;save();render();detail(id);toast('+'+p+' 💎')};
  $('det').classList.add('show');
 }
@@ -287,7 +291,7 @@ applyTheme();g48Load();daily();render();
 function applyTheme(){
  document.title=CONFIG.title;const t=CONFIG.theme,r=document.documentElement.style;
  for(const [k,v] of Object.entries({bg:t.bg,panel:t.panel,line:t.line,tx:t.text,mut:t.muted,acc:t.accent,n:t.N,r:t.R,sr:t.SR}))r.setProperty('--'+k,v);
- r.setProperty('--game-font',JSON.stringify(t.font));r.setProperty('--card-radius',t.cardRadius+'px');
+ r.setProperty('--game-font',JSON.stringify(t.font));r.setProperty('--card-radius',t.cardRadius+'px');r.setProperty('--frame-inset',(t.frameInset??4)+'%');
  for(const key of ['background','pill','button'])r.setProperty('--art-'+key,t[key]?'url('+JSON.stringify(t[key])+')':'none');
 }
 function renderCustomUI(){

@@ -9,7 +9,7 @@ async function boot(config,{preview=false,saved=null}={}){
  const node=()=>({children:[],style:{setProperty(){}},classList:{add(){},remove(){},toggle(){},contains(){return false;}},appendChild(n){this.children.push(n);},append(...n){this.children.push(...n);},replaceChildren(...n){this.children=n;},querySelector(){return node();},addEventListener(){},removeEventListener(){},parentNode:{style:{}},textContent:'',innerHTML:'',offsetWidth:300,clientWidth:300});
  const document={getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);},createElement:node,documentElement:node(),addEventListener(){},querySelector:node,body:node()};
  const context=vm.createContext({document,location:new URL('http://localhost/gacha_game.html'+(preview?'?preview=1':'')),URLSearchParams,fetch:async()=>({ok:true,json:async()=>structuredClone(config)}),localStorage:{getItem:key=>store.get(key),setItem:(key,val)=>store.set(key,val)},setTimeout:()=>1,clearTimeout(){},requestAnimationFrame:()=>1,cancelAnimationFrame(){},addEventListener(){},innerWidth:390,innerHeight:800,console,window:{},navigator:{},DOMMatrix:class{m41=0},getComputedStyle:()=>({transform:'none'})});
- await vm.runInContext(source.replace('applyTheme();g48Load();daily();render();','globalThis.game={pull,doPull,doMini,state:()=>S,config:CONFIG,tab};applyTheme();g48Load();daily();render();'),context);
+ await vm.runInContext(source.replace('applyTheme();g48Load();daily();render();','globalThis.game={pull,doPull,doMini,state:()=>S,config:CONFIG,tab,cardFace,resultHtml,itemHtml,detail};applyTheme();g48Load();daily();render();'),context);
  assert.ok(context.game,'Game booted successfully');return {game:context.game,nodes,store};
 }
 test('custom starting balance, daily bonus, labels, mini-game switches and preview storage reach the game',async()=>{
@@ -25,4 +25,16 @@ test('disabled collections/cards are excluded and existing player progress survi
  const c=structuredClone(original);c.cols[0].enabled=false;c.economy.startingGems=9999;c.cards.find(x=>x.col===c.cols[1].id&&x.r==='SR').enabled=false;
  const saved={col:'mb',gems:42,free:3,day:'2099-1-1',p:{},inv:{7:2},shards:9,banner:7,mini:{n:0,g:0},st:{N:0,R:0,SR:0,M:0}};
  const {game}=await boot(c,{saved});assert.equal(game.state().gems,42);assert.equal(game.state().inv[7],2);assert.equal(game.state().col,'kv');
+});
+
+test('rarity frames and per-card overrides appear consistently without changing saved inventory or exposing locked artwork',async()=>{
+ const config=structuredClone(original);config.theme.frames={N:'assets/media/frame-n.png',R:'assets/media/frame-r.png',SR:'assets/media/frame-sr.png'};config.theme.frameInset=6;
+ const card=config.cards.find(card=>card.r==='SR');card.frame='assets/media/custom-frame.png';
+ const saved={col:card.col,gems:42,free:3,day:'2099-1-1',p:{},inv:{[card.id]:2},shards:9,banner:card.id,mini:{n:0,g:0},st:{N:0,R:0,SR:0,M:0}};
+ const {game,nodes}=await boot(config,{saved});
+ for(const html of [nodes.get('hero').innerHTML,nodes.get('ban').innerHTML,nodes.get('grid').innerHTML,game.itemHtml({c:card}),game.resultHtml({c:card})])assert.match(html,/custom-frame.png/);
+ game.detail(card.id);assert.match(nodes.get('dm').innerHTML,/custom-frame.png/);assert.equal(game.state().inv[card.id],2);assert.equal(game.state().gems,42);
+ const normal=config.cards.find(card=>card.r==='N');assert.match(game.cardFace(normal),/frame-n.png/);
+ assert.ok(!game.cardFace({...normal,frameEnabled:false}).includes('card-frame'));assert.ok(!game.cardFace(normal,{locked:true}).includes('card-frame'));assert.ok(!game.cardFace(normal,{locked:true}).includes(normal.img));assert.match(game.cardFace(normal,{locked:true}),new RegExp(config.back.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ assert.match(game.cardFace({...normal,name:'<img src=x>',frame:'https://example.com/f.png?q="test"'}),/&lt;img src=x&gt;/);assert.match(game.cardFace({...normal,frame:'https://example.com/f.png?q="test"'}),/&quot;test&quot;/);
 });

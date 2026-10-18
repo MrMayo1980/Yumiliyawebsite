@@ -30,3 +30,11 @@ test('login display changes labels and images without changing the password inpu
  applyLoginAppearance(login);assert.equal(pick('[data-login="heading"]').textContent,login.heading);assert.equal(screen.dataset.layout,'centered');assert.equal(pick('[data-login="passwordLabel"]').textContent,'Ключ доступа');assert.equal(pick('[data-login="symbol"]').hidden,true);assert.equal(pick('[data-login="logo"]').hidden,false);assert.ok(!nodes.has('#password'));
  assert.equal(displayImageUrl('javascript:alert(1)'), '');assert.equal(displayImageUrl('/api/admin/state'),'');assert.equal(displayImageUrl('uploads/video.mp4'),'');
 });
+
+test('frame settings preserve old cards, validate image URLs and round-trip shared and individual frames',()=>{
+ const old={config:structuredClone(config),gallery:{items:[],deleted:[]}},normalized=validateDocument(old,true);
+ assert.deepEqual(normalized.config.theme.frames,{N:'',R:'',SR:''});assert.equal(normalized.config.theme.frameInset,4);assert.equal(normalized.config.cards[0].frame,'');assert.equal(normalized.config.cards[0].frameEnabled,true);assert.equal(old.config.theme.frames,undefined);
+ normalized.config.theme.frames.N='assets/media/frame.png';normalized.config.theme.frameInset=7.5;normalized.config.cards[0].frame='https://example.com/card-frame.webp';normalized.config.cards[0].frameEnabled=false;
+ assert.deepEqual(validateDocument(normalized,true),normalized);
+ for(const change of [d=>d.config.theme.frames.N='javascript:alert(1)',d=>d.config.theme.frames.R='uploads/movie.mp4',d=>d.config.theme.frameInset=99,d=>d.config.theme.frames.extra='bad',d=>d.config.cards[0].frame='data:text/html,bad',d=>d.config.cards[0].frame='uploads/movie.webm',d=>d.config.cards[0].frameEnabled='yes']){const bad=structuredClone(normalized);change(bad);assert.throws(()=>validateDocument(bad,true));}
+});

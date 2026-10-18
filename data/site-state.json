@@ -45,7 +45,9 @@
           "name": "Пляж",
           "img": "assets/gacha/8fc111987e4b70f595eb.webp",
           "enabled": true,
-          "weight": 1
+          "weight": 1,
+          "frame": "",
+          "frameEnabled": true
         },
         {
           "id": 2,
@@ -54,7 +56,9 @@
           "name": "Бассейн",
           "img": "assets/gacha/0f7d79dc9b3940087b2c.webp",
           "enabled": true,
-          "weight": 1
+          "weight": 1,
+          "frame": "",
+          "frameEnabled": true
         },
         {
           "id": 3,
@@ -63,7 +67,9 @@
           "name": "Домик",
           "img": "assets/gacha/f22d9fe5f884cf7baad5.webp",
           "enabled": true,
-          "weight": 1
+          "weight": 1,
+          "frame": "",
+          "frameEnabled": true
         },
         {
           "id": 4,
@@ -72,7 +78,9 @@
           "name": "Небо над домиком",
           "img": "assets/gacha/9fe8fd284fe08cada5a0.webp",
           "enabled": true,
-          "weight": 1
+          "weight": 1,
+          "frame": "",
+          "frameEnabled": true
         },
         {
           "id": 5,
@@ -81,7 +89,9 @@
           "name": "Баскетбол",
           "img": "assets/gacha/02053729c6cc54248cb0.webp",
           "enabled": true,
-          "weight": 1
+          "weight": 1,
+          "frame": "",
+          "frameEnabled": true
         },
         {
           "id": 6,
@@ -90,7 +100,9 @@
           "name": "Заплыв",
           "img": "assets/gacha/0ec851f963090caee930.webp",
           "enabled": true,
-          "weight": 1
+          "weight": 1,
+          "frame": "",
+          "frameEnabled": true
         },
         {
           "id": 7,
@@ -99,7 +111,9 @@
           "name": "Красная машина",
           "img": "assets/gacha/24c240745ffdf28311e7.webp",
           "enabled": true,
-          "weight": 1
+          "weight": 1,
+          "frame": "",
+          "frameEnabled": true
         },
         {
           "id": 8,
@@ -108,7 +122,9 @@
           "name": "Светлая комната",
           "img": "assets/gacha/c02b67971c7ce6c73aad.webp",
           "enabled": true,
-          "weight": 1
+          "weight": 1,
+          "frame": "",
+          "frameEnabled": true
         },
         {
           "id": 9,
@@ -117,7 +133,9 @@
           "name": "Вечерний паркет",
           "img": "assets/gacha/6fd295b71e28a4bf5b6f.webp",
           "enabled": true,
-          "weight": 1
+          "weight": 1,
+          "frame": "",
+          "frameEnabled": true
         },
         {
           "id": 10,
@@ -126,7 +144,9 @@
           "name": "Корсет",
           "img": "assets/gacha/8fd793ff61ef4cc79753.webp",
           "enabled": true,
-          "weight": 1
+          "weight": 1,
+          "frame": "",
+          "frameEnabled": true
         },
         {
           "id": 11,
@@ -135,7 +155,9 @@
           "name": "Яхта",
           "img": "assets/gacha/cfa3a9cd538061e8ab07.webp",
           "enabled": true,
-          "weight": 1
+          "weight": 1,
+          "frame": "",
+          "frameEnabled": true
         },
         {
           "id": 12,
@@ -144,7 +166,9 @@
           "name": "Трап",
           "img": "assets/gacha/36648b996172d3da79fb.webp",
           "enabled": true,
-          "weight": 1
+          "weight": 1,
+          "frame": "",
+          "frameEnabled": true
         },
         {
           "id": 13,
@@ -153,7 +177,9 @@
           "name": "Блеск",
           "img": "assets/gacha/2f423316fe106a5e6306.webp",
           "enabled": true,
-          "weight": 1
+          "weight": 1,
+          "frame": "",
+          "frameEnabled": true
         },
         {
           "id": 14,
@@ -162,7 +188,9 @@
           "name": "Премия",
           "img": "assets/gacha/75f71c0ff4b8683495b2.webp",
           "enabled": true,
-          "weight": 1
+          "weight": 1,
+          "frame": "",
+          "frameEnabled": true
         },
         {
           "id": 15,
@@ -171,7 +199,9 @@
           "name": "Награда",
           "img": "assets/gacha/6da9f2f1b6361b3c4056.webp",
           "enabled": true,
-          "weight": 1
+          "weight": 1,
+          "frame": "",
+          "frameEnabled": true
         },
         {
           "id": 16,
@@ -180,7 +210,9 @@
           "name": "Кепка",
           "img": "assets/gacha/cfcbfbb781bf7c6a18ce.webp",
           "enabled": true,
-          "weight": 1
+          "weight": 1,
+          "frame": "",
+          "frameEnabled": true
         },
         {
           "id": 17,
@@ -189,7 +221,9 @@
           "name": "Крупный план",
           "img": "assets/gacha/470e2c407ad37e4727f9.webp",
           "enabled": true,
-          "weight": 1
+          "weight": 1,
+          "frame": "",
+          "frameEnabled": true
         },
         {
           "id": 18,
@@ -198,7 +232,9 @@
           "name": "Вечер",
           "img": "assets/gacha/00648162cbdc86d10768.webp",
           "enabled": true,
-          "weight": 1
+          "weight": 1,
+          "frame": "",
+          "frameEnabled": true
         }
       ],
       "back": "assets/gacha/67a69b8b0bd479bbe8c8.webp",
@@ -305,7 +341,13 @@
         "SR": "#ffc13b",
         "font": "Philosopher",
         "maxWidth": 1000,
-        "cardRadius": 12
+        "cardRadius": 12,
+        "frames": {
+          "N": "",
+          "R": "",
+          "SR": ""
+        },
+        "frameInset": 4
       },
       "labels": {
         "summon": "Призыв",
