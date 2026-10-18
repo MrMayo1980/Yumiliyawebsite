@@ -65,7 +65,7 @@ export async function createApp({root=process.cwd(),dataDir=resolve(root,'.data'
       if(!['GET','HEAD'].includes(req.method))throw error('Метод не поддерживается.',405);
       const file=path==='/'?'index.html':decodeURIComponent(path.slice(1));
       if(file==='data/gacha.json')return json(res,200,state.published.config);
-      const allowed=['frames.js','frames.css','hosting.js','validation.js','pages-admin.js','appearance.js','site.css','index.html','index.js','data/legacy-gallery.json','admin.html','admin.js','admin.css','gallery.js','gacha_game.html','gacha.js'];
+      const allowed=['frames.js','frames.css','hosting.js','validation.js','draft-sync.js','pages-admin.js','appearance.js','site.css','index.html','index.js','data/legacy-gallery.json','admin.html','admin.js','admin.css','gallery.js','gacha_game.html','gacha.js'];
       if(!allowed.includes(file)&&!/^(assets\/(?:gacha|media)|uploads)\/[a-zA-Z0-9_-]+\.(webp|png|jpe?g|gif|avif|mp4|webm|mov|ogg)$/i.test(file))throw error('Файл не найден.',404);
       const full=join(root,file);let info;try{info=await stat(full);}catch{throw error('Файл не найден.',404);}if(!info.isFile())throw error('Файл не найден.',404);
       res.writeHead(200,{'Content-Type':MIME[extname(full)]||'application/octet-stream','Content-Length':info.size,'Cache-Control':file.startsWith('assets/')||file.startsWith('uploads/')?'public, max-age=31536000, immutable':'no-cache'});if(req.method==='HEAD')return res.end();createReadStream(full).pipe(res);

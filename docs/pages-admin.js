@@ -1,5 +1,6 @@
+import {synchronizeDraft} from './draft-sync.js?v=draft-sync-1';
 import {validateDocument} from './validation.js';
-import {pagesSettings,registerPendingAsset} from './hosting.js';
+import {pagesSettings,registerPendingAsset,resolvePendingAsset} from './hosting.js';
 const clone=value=>structuredClone(value);
 const problem=(message,status=400)=>Object.assign(new Error(message),{status});
 export class PasswordPublisher{
@@ -33,37 +34,61 @@ function database(){return new Promise((resolve,reject)=>{const req=indexedDB.op
 async function storage(store,method,value,key){const db=await database();return new Promise((resolve,reject)=>{const tx=db.transaction(store,method==='get'||method==='getAll'?'readonly':'readwrite');const req=tx.objectStore(store)[method](...([value,key].filter((_,i)=>i===0?value!==undefined:key!==undefined)));let result;req.onsuccess=()=>result=req.result;tx.oncomplete=()=>{db.close();resolve(result);};tx.onerror=()=>{db.close();reject(new Error('Не удалось сохранить черновик в браузере. Проверьте свободное место.'));};});}
 let client,state,account='',active=false;const revisions=new Map();
 async function files(){return storage('files','getAll');}
-async function restoreAssets(){for(const file of await files())registerPendingAsset(file.path,URL.createObjectURL(file.blob));}
-async function persist(){await storage('state','put',{revision:state.revision,draftVersion:state.draftVersion,draft:state.draft},'draft');}
+async function restoreAssets(){for(const file of await files())if(resolvePendingAsset(file.path)===file.path)registerPendingAsset(file.path,URL.createObjectURL(file.blob));}
+async function persist(expected){
+ const value={revision:state.revision,draftVersion:state.draftVersion,draft:state.draft,basePublished:state.basePublished};
+ if(!arguments.length){await storage('state','put',value,'draft');return;}
+ const db=await database();await new Promise((resolve,reject)=>{
+  const tx=db.transaction('state','readwrite'),store=tx.objectStore('state'),request=store.get('draft');let conflict=false;
+  request.onsuccess=()=>{const actual=request.result,unchanged=(!actual&&!expected)||(actual&&expected&&actual.revision===expected.revision&&actual.draftVersion===expected.draftVersion);if(!unchanged){conflict=true;tx.abort();return;}store.put(value,'draft');};
+  tx.oncomplete=()=>{db.close();resolve();};tx.onabort=tx.onerror=()=>{db.close();reject(conflict?problem('Черновик изменён в другой вкладке. Обновите студию.',409):problem('Не удалось сохранить черновик.',503));};
+ });
+}
+async function synchronize(published,saved){
+ const previousState=state;
+ let historicalBase;
+ if(saved?.draft&&!saved.basePublished&&saved.revision!==published.revision){try{historicalBase=(await client.history()).find(item=>item.revision===saved.revision)?.document;}catch{}}
+ const synced=synchronizeDraft(saved,published,historicalBase);
+ if(synced.backup){const copies=await storage('state','get','draft-recoveries')||[];copies.push({revision:saved.revision,createdAt:new Date().toISOString(),document:clone(saved.draft)});await storage('state','put',copies,'draft-recoveries');}
+ const copies=await storage('state','get','draft-recoveries')||[];
+ state={revision:published.revision,updatedAt:published.updatedAt,draft:synced.draft,basePublished:synced.basePublished,draftVersion:synced.draftVersion,stale:false,syncNotice:synced.notice,recoveryAvailable:copies.length>0};
+ try{await persist(saved);}catch(error){state=previousState;throw error;}
+}
 function requireSession(){if(!active||!client?.session)throw problem('Войдите с паролем администратора.',401);}
 function detectExtension(bytes){const s=(a,b)=>new TextDecoder().decode(bytes.subarray(a,b));if(bytes[0]===137&&s(1,4)==='PNG')return 'png';if(bytes[0]===255&&bytes[1]===216&&bytes[2]===255)return 'jpg';if(/^GIF8[79]a$/.test(s(0,6)))return 'gif';if(s(0,4)==='RIFF'&&s(8,12)==='WEBP')return 'webp';if(s(4,8)==='ftyp')return /avif|avis/.test(s(8,32))?'avif':/qt  /.test(s(8,32))?'mov':'mp4';if(bytes[0]===26&&bytes[1]===69&&bytes[2]===223&&bytes[3]===163)return 'webm';if(s(0,4)==='OggS')return 'ogg';throw problem('Выберите JPG, PNG, GIF, WEBP, AVIF, MP4, MOV, WEBM или OGG.',415);}
 export async function pagesApi(path,{method='GET',data,raw}={}){
  if(path==='api/login'&&method==='POST'){
   client=new PasswordPublisher(pagesSettings());account=await client.login(data.password);
   const published=await client.readState(await client.head()),saved=await storage('state','get','draft');
-  state={revision:saved?.revision??published.revision,updatedAt:published.updatedAt,draft:saved?.draft||clone(published.published),draftVersion:saved?.draftVersion||0,stale:!!saved&&saved.revision!==published.revision};active=true;await restoreAssets();return {csrf:'password-memory-session'};
+  await synchronize(published,saved);active=true;await restoreAssets();return {csrf:'password-memory-session'};
  }
  requireSession();
  if(path==='api/logout'){await client.logout();active=false;return {ok:true};}
  if(path==='api/admin/password'&&method==='POST'){await client.changePassword(data);active=false;return {ok:true};}
  if(path==='api/admin/state')return {...clone(state),csrf:'password-memory-session',account};
+ if(path==='api/admin/sync'&&method==='POST'){
+  const before=JSON.stringify([state.revision,state.draftVersion,state.draft]);
+  const published=await client.readState(),saved=await storage('state','get','draft');await synchronize(published,saved);await restoreAssets();
+  return {changed:before!==JSON.stringify([state.revision,state.draftVersion,state.draft])};
+ }
+ if(path==='api/admin/recovery'){const copies=await storage('state','get','draft-recoveries')||[];if(!copies.length)throw problem('Сохранённых копий нет.',404);return clone(copies.at(-1));}
  if(path==='api/admin/draft'&&method==='PUT'){
   if(data.expectedDraftVersion!==state.draftVersion)throw problem('Черновик изменился. Обновите студию.',409);
   const saved=await storage('state','get','draft');if(saved&&(saved.draftVersion!==state.draftVersion||saved.revision!==state.revision))throw problem('Черновик изменён в другой вкладке. Экспортируйте изменения перед обновлением.',409);
-  state.draft=validateDocument(data.document);state.draftVersion++;await persist();return {draftVersion:state.draftVersion};
+  const previous=clone(state);state.draft=validateDocument(data.document);state.draftVersion++;try{await persist(saved);}catch(error){state=previous;throw error;}return {draftVersion:state.draftVersion};
  }
  if(path==='api/admin/publish'&&method==='POST'){
   if(data.expectedRevision!==state.revision||data.expectedDraftVersion!==state.draftVersion)throw problem('Черновик изменился. Повторите публикацию.',409);
   const saved=await storage('state','get','draft');if(saved&&(saved.draftVersion!==state.draftVersion||saved.revision!==state.revision))throw problem('Черновик изменён в другой вкладке. Экспортируйте изменения перед обновлением.',409);
   const paths=new Set();const collect=value=>{if(typeof value==='string')paths.add(value);else if(Array.isArray(value))value.forEach(collect);else if(value&&typeof value==='object')Object.values(value).forEach(collect);};collect(state.draft);const referenced=(await files()).filter(file=>paths.has(file.path));
-  const result=await client.publish(state.draft,state.revision,referenced);state.revision=result.revision;state.updatedAt=result.updatedAt;state.stale=false;await persist();for(const file of referenced)await storage('files','delete',file.path);return {revision:state.revision,updatedAt:state.updatedAt,commit:result.commit};
+  const result=await client.publish(state.draft,state.revision,referenced);state.revision=result.revision;state.updatedAt=result.updatedAt;state.draft=validateDocument(result.published||state.draft);state.basePublished=clone(state.draft);state.stale=false;state.syncNotice='';await persist();for(const file of referenced)await storage('files','delete',file.path);return {revision:state.revision,updatedAt:state.updatedAt,commit:result.commit};
  }
  if(path==='api/admin/upload'&&method==='POST'){
   if(!raw||raw.size>40*1024*1024)throw problem('Файл должен быть не больше 40 МБ.',413);
   const ext=detectExtension(new Uint8Array(await raw.slice(0,64).arrayBuffer())),path='assets/media/'+crypto.randomUUID()+'.'+ext;
   await storage('files','put',{path,blob:raw});registerPendingAsset(path,URL.createObjectURL(raw));return {url:path,type:['mp4','mov','webm','ogg'].includes(ext)?'video':ext==='gif'?'gif':'image'};
  }
- if(path==='api/admin/reload'&&method==='POST'){const published=await client.readState(await client.head());state={revision:published.revision,updatedAt:published.updatedAt,draft:clone(published.published),draftVersion:state.draftVersion+1,stale:false};await persist();await storage('files','clear');return {ok:true};}
+ if(path==='api/admin/reload'&&method==='POST'){const published=await client.readState(await client.head());state={revision:published.revision,updatedAt:published.updatedAt,draft:clone(published.published),basePublished:clone(published.published),draftVersion:state.draftVersion+1,stale:false,syncNotice:''};await persist();await storage('files','clear');return {ok:true};}
  if(path==='api/admin/history'){
   revisions.clear();const all=await client.history();for(const item of all)revisions.set(item.revision,item);return all.filter(x=>x.revision<state.revision).map(({revision,updatedAt})=>({revision,updatedAt}));
  }
