@@ -1,3 +1,4 @@
+import {workspaceFromSearch,projectDocument,playerStorage,balanceNotice} from '../sections.js';
 import {normalizeFrameSettings,cardFrame,framePreset,FRAME_PRESETS,photoStyle} from '../frames.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -5,14 +6,14 @@ import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 const source=await readFile(new URL('../gacha.js',import.meta.url),'utf8');
 const original=JSON.parse(await readFile(new URL('../data/gacha.json',import.meta.url),'utf8'));
-async function boot(config,{preview=false,saved=null,fetcher=null,random=null,sessionStore=new Map()}={}){
+async function boot(config,{workspace='main',preview=false,saved=null,fetcher=null,random=null,sessionStore=new Map()}={}){
  const nodes=new Map(),store=new Map(),events=new Map(),documentEvents=new Map(),timers=new Map();let nextTimer=0,reloads=0;if(saved)store.set('gacha3',JSON.stringify(saved));
  const node=()=>({children:[],style:{setProperty(){}},classList:{values:new Set(),add(k){this.values.add(k);},remove(k){this.values.delete(k);},toggle(){},contains(k){return this.values.has(k);}},appendChild(n){this.children.push(n);},append(...n){this.children.push(...n);},replaceChildren(...n){this.children=n;},querySelector(){return node();},addEventListener(){},removeEventListener(){},parentNode:{style:{}},textContent:'',htmlWrites:0,_html:'',get innerHTML(){return this._html;},set innerHTML(value){this._html=value;this.htmlWrites++;},offsetWidth:300,clientWidth:300});
  const document={hidden:false,getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);},createElement:node,documentElement:node(),addEventListener:(name,fn)=>documentEvents.set(name,fn),querySelector:node,body:node()};
- const gameLocation=new URL('http://localhost/gacha_game.html'+(preview?'?preview=1':''));gameLocation.reload=()=>reloads++;
- const context=vm.createContext({normalizeFrameSettings,cardFrame,framePreset,photoStyle,document,location:gameLocation,URLSearchParams,sessionStorage:{getItem:key=>sessionStore.get(key),setItem:(key,value)=>sessionStore.set(key,value),removeItem:key=>sessionStore.delete(key)},fetch:fetcher|| (async()=>({ok:true,json:async()=>structuredClone(config)})),localStorage:{getItem:key=>store.get(key),setItem:(key,val)=>store.set(key,val)},setTimeout:(fn,delay)=>{const id=++nextTimer;timers.set(id,{fn,delay});return id;},clearTimeout:id=>timers.delete(id),requestAnimationFrame:()=>1,cancelAnimationFrame(){},addEventListener:(name,fn)=>{const previous=events.get(name);events.set(name,previous?(event)=>{previous(event);fn(event);}:fn);},innerWidth:390,innerHeight:800,console,window:{},navigator:{},DOMMatrix:class{m41=0},getComputedStyle:()=>({transform:'none'})});
+ const gameLocation=new URL('http://localhost/gacha_game.html?'+[preview?'preview=1':'',workspace==='drugie'?'section=drugie':''].filter(Boolean).join('&'));gameLocation.reload=()=>reloads++;
+ const context=vm.createContext({workspaceFromSearch,projectDocument,playerStorage,balanceNotice,normalizeFrameSettings,cardFrame,framePreset,photoStyle,document,location:gameLocation,URLSearchParams,sessionStorage:{getItem:key=>sessionStore.get(key),setItem:(key,value)=>sessionStore.set(key,value),removeItem:key=>sessionStore.delete(key)},fetch:fetcher|| (async()=>({ok:true,json:async()=>structuredClone(config)})),localStorage:{getItem:key=>store.get(key),setItem:(key,val)=>store.set(key,val)},setTimeout:(fn,delay)=>{const id=++nextTimer;timers.set(id,{fn,delay});return id;},clearTimeout:id=>timers.delete(id),requestAnimationFrame:()=>1,cancelAnimationFrame(){},addEventListener:(name,fn)=>{const previous=events.get(name);events.set(name,previous?(event)=>{previous(event);fn(event);}:fn);},innerWidth:390,innerHeight:800,console,window:{},navigator:{},DOMMatrix:class{m41=0},getComputedStyle:()=>({transform:'none'})});
  if(random!==null)vm.runInContext('Math.random=()=>'+random,context);
- await vm.runInContext(source.replace(/^import[^\n]*\n/, '').replace('applyTheme();g48Load();daily();render();','globalThis.game={pull,doPull,doMini,state:()=>S,config:CONFIG,render,tab,cardFace,resultHtml,itemHtml,detail,filler};applyTheme();g48Load();daily();render();'),context);
+ await vm.runInContext(source.replace(/^import[^\n]*\n/gm, '').replace('applyTheme();g48Load();daily();render();','globalThis.game={pull,doPull,doMini,state:()=>S,config:CONFIG,render,tab,cardFace,resultHtml,itemHtml,detail,filler};applyTheme();g48Load();daily();render();'),context);
  assert.ok(context.game,'Game booted successfully');return {game:context.game,nodes,store,document,events,documentEvents,timers,sessionStore,reloads:()=>reloads};
 }
 test('custom starting balance, daily bonus, labels, mini-game switches and preview storage reach the game',async()=>{
@@ -113,4 +114,13 @@ test('admin balance changes update an open game without touching inventory or pr
  app.events.get('storage')({key:'yumiliya-local-balance',newValue:'invalid'});assert.equal(app.game.state().gems,12345);
  const preview=await boot(original,{preview:true});const before=preview.game.state().gems;
  preview.events.get('storage')?.({key:'yumiliya-local-balance',newValue:JSON.stringify({gems:98765})});assert.equal(preview.game.state().gems,before);
+});
+
+test('Drugie game loads its own published catalog and never inherits main-game inventory or balance',async()=>{
+ const other=structuredClone(original);other.title='Independent gacha';other.economy.startingGems=555;
+ const saved={gems:42,free:3,inv:{7:2},day:'2099-1-1'},app=await boot(original,{workspace:'drugie',saved,fetcher:async url=>url.startsWith('api/')?{ok:false}:{ok:true,json:async()=>({revision:9,published:{config:original,sections:{drugie:{config:other}}}})}});
+ assert.equal(app.game.config.title,'Independent gacha');assert.equal(app.game.state().gems,555);assert.equal(app.game.state().inv[7],undefined);
+ assert.equal(JSON.parse(app.store.get('gacha3')).gems,42);assert.equal(JSON.parse(app.store.get('gacha3_drugie')).gems,555);
+ app.events.get('storage')({key:'yumiliya-local-balance',newValue:JSON.stringify({gems:999})});assert.equal(app.game.state().gems,555);
+ app.events.get('storage')({key:'yumiliya-local-balance-drugie',newValue:JSON.stringify({gems:1234})});assert.equal(app.game.state().gems,1234);assert.equal(JSON.parse(app.store.get('gacha3')).gems,42);
 });

@@ -1,3 +1,4 @@
+import {projectDocument,workspaceFromSearch} from './sections.js?v=drugie-1';
 import {isPages,loadPublished,loadPreview,localMediaUrl,resolvePendingAsset} from './hosting.js';
 // Public display settings only. Authentication and permissions stay on the server.
 export const DISPLAY_FONTS=['Cormorant Garamond','Montserrat','Philosopher','system-ui'];
@@ -14,8 +15,8 @@ export const DEFAULT_APPEARANCE={
   }
 };
 export async function loadAppearance(preview=false){
-  if(isPages())return (preview?await loadPreview():(await loadPublished()).published).appearance;
-  const response=await fetch(preview?'api/admin/appearance':'api/appearance',{cache:'no-store'});
+  if(isPages())return projectDocument(preview?await loadPreview():(await loadPublished()).published,workspaceFromSearch(location.search)).appearance;
+  const response=await fetch((preview?'api/admin/appearance':'api/appearance')+(workspaceFromSearch(location.search)==='drugie'?'?section=drugie':''),{cache:'no-store'});
   if(!response.ok){if(preview)throw new Error('Войдите в студию для предпросмотра.');return structuredClone(DEFAULT_APPEARANCE);}
   return response.json();
 }

@@ -1,7 +1,8 @@
+import {duplicateSection} from './sections.js';
 import {normalizeCardIds} from './card-ids.js';
 import {normalizeFrameSettings} from './frames.js';
-import {DEFAULT_APPEARANCE,DISPLAY_FONTS} from './appearance.js?v=archive-random-1';
-export function validateDocument(doc, publish = false) {
+import {DEFAULT_APPEARANCE,DISPLAY_FONTS} from './appearance.js?v=drugie-1';
+export function validateDocument(doc, publish = false, sectionOnly = false) {
   const fail = message => {throw Object.assign(new Error(message), {status:422});};
   const obj = (v,n) => {if(!v || typeof v!=='object' || Array.isArray(v)) fail(`${n}: требуется объект.`);};
   const text = (v,n,max=2000) => {if(typeof v!=='string'||v.length>max) fail(`${n}: недопустимый текст.`);};
@@ -63,9 +64,15 @@ export function validateDocument(doc, publish = false) {
   for(const key of ['artwork','background','logo'])art(login[key],`Вход: ${key}`);
   for(const key of ['bodyFont','titleFont'])choice(login[key],DISPLAY_FONTS,`Вход: ${key}`);
   choice(login.layout,['split','centered'],'Макет экрана входа');bool(login.showStory,'Иллюстрация экрана входа');
+  if(doc.gallery.includeLegacy!==undefined)bool(doc.gallery.includeLegacy,'Исходный архив');
   list(doc.gallery.items,'Архив',10000);list(doc.gallery.deleted,'Скрытые файлы',20000);
   const urls=new Set();for(const item of doc.gallery.items){obj(item,'Файл');image(item.url,'Ссылка файла');if(urls.has(item.url))fail('В архиве есть повторяющиеся ссылки.');urls.add(item.url);if(!['image','gif','video'].includes(item.type))fail('Неизвестный тип файла.');text(item.name||'','Имя файла',300);}
   for(const url of doc.gallery.deleted)image(url,'Скрытая ссылка');
   const normalized=structuredClone(doc);normalizeFrameSettings(normalized.config);normalizeCardIds(normalized.config);
+  if(sectionOnly){if(doc.sections!==undefined)fail('Вложенные разделы недопустимы.');}
+  else{
+   if(doc.sections!==undefined){obj(doc.sections,'Разделы');for(const key of Object.keys(doc.sections))if(key!=='drugie')fail('Неизвестный раздел сайта.');}
+   normalized.sections={drugie:validateDocument(doc.sections?.drugie??duplicateSection(normalized),publish,true)};
+  }
   return normalized;
 }

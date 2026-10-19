@@ -1,18 +1,19 @@
+import {workspaceFromSearch,projectDocument,playerStorage,balanceNotice} from './sections.js?v=drugie-1';
 import {normalizeFrameSettings,cardFrame,framePreset,photoStyle} from './frames.js?v=photo-1';
 (async function bootGacha(){
-const preview = new URLSearchParams(location.search).has('preview');
+const preview = new URLSearchParams(location.search).has('preview'),workspace=workspaceFromSearch(location.search);
 let fetchedRevision=null;
 async function loadConfig(){
  if(window.YUMILIYA_PAGES){
   const {loadPublished,loadPreview,materializeAssets}=await import('./hosting.js?v=catalog-1');
-  if(preview)return materializeAssets((await loadPreview()).config);
-  const state=await loadPublished({fresh:true});fetchedRevision=state.revision;return materializeAssets(state.published.config);
+  if(preview)return materializeAssets(projectDocument(await loadPreview(),workspace).config);
+  const state=await loadPublished({fresh:true});fetchedRevision=state.revision;return materializeAssets(projectDocument(state.published,workspace).config);
  }
- const endpoint=preview?'api/admin/preview':'api/gacha';
+ const endpoint=(preview?'api/admin/preview':'api/gacha')+(workspace==='drugie'?'?section=drugie':'');
  try{const response=await fetch(endpoint,{cache:'no-store'});if(response.ok)return await response.json();if(preview)throw new Error('Войдите в админ-панель для предпросмотра.')}catch(e){if(preview)throw e}
  // A plain static server must use the published catalog too, rather than the original seed cards.
  const published=await fetch('data/site-state.json?t='+Date.now(),{cache:'no-store'});
- if(published.ok){const state=await published.json();if(!state.published?.config)throw new Error('Опубликованный каталог карт повреждён.');fetchedRevision=state.revision;return state.published.config;}
+ if(published.ok){const state=await published.json();if(!state.published?.config)throw new Error('Опубликованный каталог карт повреждён.');fetchedRevision=state.revision;return projectDocument(state.published,workspace).config;}
  if(published.status!==404)throw new Error('Не удалось обновить опубликованный каталог карт.');
  const response=await fetch('data/gacha.json',{cache:'no-store'});if(!response.ok)throw new Error('Настройки игры недоступны.');return await response.json();
 }
@@ -20,7 +21,7 @@ const CONFIG=normalizeFrameSettings(await loadConfig());
 const activeCols=CONFIG.cols.filter(c=>c.enabled),activeIds=new Set(activeCols.map(c=>c.id));
 const DATA={...CONFIG,cols:activeCols,cards:CONFIG.cards.filter(c=>c.enabled&&activeIds.has(c.col))};
 if(!DATA.cols.length||DATA.cols.some(col=>!DATA.cards.some(c=>c.col===col.id&&c.r==='N')))throw new Error('Для игры нужна активная коллекция с картами N.');
-const STORAGE=preview?'gacha_admin_preview':'gacha3';
+const STORAGE=playerStorage(workspace,preview);
 if(preview&&new URLSearchParams(location.search).has('reset'))localStorage.removeItem(STORAGE);
 const E=CONFIG.economy,L=CONFIG.labels;
 
@@ -310,7 +311,7 @@ applyTheme();g48Load();daily();render();
 try{const remembered=Number(sessionStorage.getItem(STORAGE+'_catalog_tab'));sessionStorage.removeItem(STORAGE+'_catalog_tab');if([1,2,3,4].includes(remembered))tab(remembered);}catch{}
 watchCatalog();
 if(!preview)addEventListener('storage',event=>{
- if(event.key!=='yumiliya-local-balance'||!event.newValue)return;
+ if(event.key!==balanceNotice(workspace)||!event.newValue)return;
  try{const {gems}=JSON.parse(event.newValue);if(Number.isSafeInteger(gems)&&gems>=0){S.gems=gems;render();}}catch{}
 });
 

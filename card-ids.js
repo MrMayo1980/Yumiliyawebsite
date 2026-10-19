@@ -10,3 +10,8 @@ export function validateCardTransition(previous,next){
  for(const card of next.cards)if(!used.has(card.id)&&card.id<minimum)throw Object.assign(new Error('ID новой карты уже использовался. Обновите студию и создайте новую карту; прогресс старых карт сохранится.'),{status:422});
  next.nextCardId=Math.max(minimum,next.nextCardId||1,maximum(next)+1);
 }
+
+export function validateDocumentTransition(previous,next){
+ validateCardTransition(previous.config,next.config);
+ if(previous.sections?.drugie&&next.sections?.drugie)validateCardTransition(previous.sections.drugie.config,next.sections.drugie.config);
+}

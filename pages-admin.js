@@ -1,5 +1,5 @@
-import {synchronizeDraft} from './draft-sync.js?v=draft-sync-1';
-import {validateDocument} from './validation.js?v=archive-random-1';
+import {synchronizeDraft} from './draft-sync.js?v=drugie-1';
+import {validateDocument} from './validation.js?v=drugie-1';
 import {pagesSettings,registerPendingAsset,resolvePendingAsset} from './hosting.js';
 const clone=value=>structuredClone(value);
 const problem=(message,status=400)=>Object.assign(new Error(message),{status});
