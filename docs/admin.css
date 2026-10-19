@@ -32,3 +32,5 @@
 @media(max-width:500px){.photo-editor{grid-template-columns:1fr;gap:16px}.photo-editor .card-live-preview{width:150px}.photo-controls{width:100%}}
 .workspace-switch{display:grid;gap:6px;margin:16px 0;padding:8px;background:var(--panel,#191623);border:1px solid var(--line,#403341);border-radius:12px}.workspace-switch button{width:100%;padding:10px 12px;text-align:left;border:1px solid transparent;background:transparent;color:inherit;border-radius:8px;font:inherit;cursor:pointer}.workspace-switch button.active{background:#ec83af22;border-color:#ec83af88;color:#ec83af}.workspace-switch button:disabled{opacity:.5}
 .modal-error{margin:18px 0 0;padding:14px 16px;border:1px solid #ba697f;border-radius:9px;background:#3d2230;color:#ffd5dd;white-space:pre-wrap;overflow-wrap:anywhere}
+
+.upload-result-error{color:var(--red);white-space:pre-wrap;overflow-wrap:anywhere;margin:14px 0 0}

@@ -29,3 +29,27 @@ test('local balance control preserves saved progress, rejects invalid amounts an
  for(const value of ['', '-1', '2.5', 'abc']){nodes.get('local-balance').value=value;assert.throws(()=>context.balance.save());assert.equal(JSON.parse(store.get('gacha3')).gems,12345);}
  nodes.get('modal').open=true;context.balance.feedback('Publication failed',true);assert.equal(nodes.get('modal-error').hidden,false);assert.equal(nodes.get('modal-error').textContent,'Publication failed');
 });
+
+function uploadFixture(){
+ const nodes=new Map(),messages=[],seen=[];
+ const document={getElementById(id){if(!nodes.has(id))nodes.set(id,{hidden:false,addEventListener(){}});return nodes.get(id);},querySelectorAll:()=>[],addEventListener(){}};
+ const context=vm.createContext({workspaceFromSearch,playerStorage,balanceNotice,createScopedAdminApi,document,window:{addEventListener(){}},location:new URL('http://localhost/admin.html?section=drugie'),URLSearchParams,structuredClone,DEFAULT_APPEARANCE,isPages:()=>false,seen,messages});
+ const hooks=`globalThis.uploads={run:uploadGallery,task:runUploadTask,state:()=>({draft,pendingUploads,busy,dirty,galleryUploadNotice}),block:promise=>{busy=true;syncTask=promise;},release:()=>{busy=false;syncTask=null;},setUpload:fn=>{upload=fn;}};draft={gallery:{items:[]}};status=()=>{};render=()=>{};notify=(...args)=>messages.push(args);commit=fn=>{fn();dirty=true;};upload=async file=>{seen.push(file.name);return {url:'assets/media/'+file.name,type:'image'};};`;
+ vm.runInContext(source.replace(/^import[^\n]*\n/gm,'').replace('initializeStudio();',hooks),context);
+ return {uploads:context.uploads,seen,messages};
+}
+test('file selection waits for focus-triggered synchronization and survives replacement of the file input',async()=>{
+ const {uploads,seen}=uploadFixture();let resolve;const sync=new Promise(done=>resolve=done);uploads.block(sync);
+ const selection=[{name:'purple.png',size:100}],operation=uploads.run(selection);selection.length=0;
+ await new Promise(setImmediate);assert.deepEqual(seen,[]);assert.equal(uploads.state().pendingUploads,1);
+ uploads.release();resolve();await operation;
+ assert.deepEqual(seen,['purple.png']);assert.equal(uploads.state().draft.gallery.items.length,1);assert.equal(uploads.state().dirty,true);assert.equal(uploads.state().pendingUploads,0);assert.equal(uploads.state().busy,false);assert.match(uploads.state().galleryUploadNotice.text,/Добавлено в черновик: 1/);
+});
+test('simultaneous uploads are queued, errors stay visible and a later upload still succeeds',async()=>{
+ const {uploads}=uploadFixture();let resolve;const gate=new Promise(done=>resolve=done),calls=[];
+ uploads.setUpload(async file=>{calls.push(file.name);if(file.name==='one.png')await gate;if(file.name==='bad.png')throw new Error('Broken image');return {url:'assets/media/'+file.name,type:'image'};});
+ const first=uploads.run([{name:'one.png'}]),second=uploads.run([{name:'two.png'}]);await new Promise(setImmediate);assert.deepEqual(calls,['one.png']);resolve();await Promise.all([first,second]);assert.deepEqual(calls,['one.png','two.png']);assert.equal(uploads.state().draft.gallery.items.length,2);
+ await uploads.run([{name:'bad.png'}]);assert.equal(uploads.state().galleryUploadNotice.error,true);assert.match(uploads.state().galleryUploadNotice.text,/Broken image/);assert.equal(uploads.state().pendingUploads,0);
+ await uploads.run([{name:'three.png'}]);assert.equal(uploads.state().draft.gallery.items.length,3);assert.equal(uploads.state().galleryUploadNotice.error,false);
+ await uploads.run([]);assert.equal(uploads.state().pendingUploads,0);
+});
