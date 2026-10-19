@@ -1,13 +1,15 @@
+import {createArchiveRoulette,randomPool} from './archive-random.js?v=archive-random-1';
 import {isPages,loadPublished,loadPreview,providePreview} from './hosting.js';
 import {loadLegacyGallery,mergeGallery,mediaType,safeMediaUrl,createVideoLoader} from './gallery.js?v=performance-1';
-import {DEFAULT_APPEARANCE,loadAppearance,applySiteAppearance} from './appearance.js';
+import {DEFAULT_APPEARANCE,loadAppearance,applySiteAppearance} from './appearance.js?v=archive-random-1';
 const preview=new URLSearchParams(location.search).has('preview');
 let site=structuredClone(DEFAULT_APPEARANCE.site);
 
 let allItems = [];
 let activeFilter = 'all';
 let previewDocument,galleryLoaded=false,galleryRequest;
-const videoLoader=createVideoLoader({isActive:()=>document.body.dataset.section==='archives'&&!document.hidden&&!document.getElementById('lightbox').classList.contains('open'),autoplay:()=>site.autoplayVideos});
+const videoLoader=createVideoLoader({isActive:()=>document.body.dataset.section==='archives'&&!document.hidden&&!document.getElementById('lightbox').classList.contains('open')&&!document.getElementById('archive-roulette').open,autoplay:()=>site.autoplayVideos});
+const roulette=createArchiveRoulette({items:()=>randomPool(allItems,activeFilter,site.randomRespectFilter),settings:()=>site,openMedia:openLightbox,onChange:()=>videoLoader.update()});
 document.addEventListener('visibilitychange',()=>videoLoader.update());
 if(isPages()&&preview){previewDocument=await loadPreview();providePreview(()=>previewDocument,source=>source===document.getElementById('gacha-frame').contentWindow);}
 
@@ -40,7 +42,7 @@ function render() {
   const gallery = document.getElementById('gallery');
   const empty = document.getElementById('empty');
   const filtered = activeFilter === 'all' ? allItems : allItems.filter(i => getType(i) === activeFilter);
-  videoLoader.reset();
+  roulette.update();videoLoader.reset();
   if (!filtered.length) { gallery.innerHTML = ''; empty.classList.add('visible'); return; }
   empty.classList.remove('visible');
   const fragment=document.createDocumentFragment(),videos=[];
@@ -105,7 +107,7 @@ function showSection() {
     else link.removeAttribute('aria-current');
   });
   if (section === 'gacha') {
-    closeLB();
+    roulette.cancel();closeLB();
     const frame = document.getElementById('gacha-frame');
     if (!frame.hasAttribute('src')) frame.src = frame.dataset.src+(preview?(frame.dataset.src.includes('?')?'&':'?')+'preview=1':'');
     else if(!preview)frame.contentWindow?.postMessage({type:'yumiliya-refresh-game'},location.origin);
@@ -123,8 +125,8 @@ function updateHeaderHeight() {
 new ResizeObserver(updateHeaderHeight).observe(document.querySelector('header'));
 window.addEventListener('hashchange', showSection);
 async function initialize(){
-  try{site=(await loadAppearance(preview)).site;}catch(error){console.error(error);}
-  applySiteAppearance(site);
+  try{site={...DEFAULT_APPEARANCE.site,...(await loadAppearance(preview)).site};}catch(error){console.error(error);}
+  applySiteAppearance(site);roulette.update();
   const admin=document.getElementById('admin-link');
   if(preview){admin.href='admin.html?login-preview=1';admin.target='_blank';admin.rel='noopener';}
   showSection();

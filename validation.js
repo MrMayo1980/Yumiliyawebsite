@@ -1,6 +1,6 @@
 import {normalizeCardIds} from './card-ids.js';
 import {normalizeFrameSettings} from './frames.js';
-import {DEFAULT_APPEARANCE,DISPLAY_FONTS} from './appearance.js';
+import {DEFAULT_APPEARANCE,DISPLAY_FONTS} from './appearance.js?v=archive-random-1';
 export function validateDocument(doc, publish = false) {
   const fail = message => {throw Object.assign(new Error(message), {status:422});};
   const obj = (v,n) => {if(!v || typeof v!=='object' || Array.isArray(v)) fail(`${n}: требуется объект.`);};
@@ -40,6 +40,7 @@ export function validateDocument(doc, publish = false) {
   obj(c.labels,'Подписи');for(const key of ['summon','collection','game2048','help','pull','again','close','skip','dailyBonus','collectionDone','mini'])text(c.labels[key],key,150);
   list(c.help,'Справка',100);for(const h of c.help){obj(h,'Справка');text(h.title,'Заголовок',200);text(h.body,'Текст справки',20000);}
   obj(doc.appearance,'Оформление');obj(doc.appearance.site,'Оформление сайта');obj(doc.appearance.login,'Экран входа');
+  doc={...doc,appearance:{...doc.appearance,site:{...DEFAULT_APPEARANCE.site,...doc.appearance.site}}};
   const site=doc.appearance.site,login=doc.appearance.login;
   for(const section of ['site','login'])for(const key of Object.keys(doc.appearance[section]))if(!Object.hasOwn(DEFAULT_APPEARANCE[section],key))fail(`Оформление ${section}: неизвестное поле ${key}.`);
   const color=(value,name)=>{if(!/^#[0-9a-fA-F]{6}$/.test(value))fail(`${name}: нужен цвет #RRGGBB.`);};
@@ -48,6 +49,10 @@ export function validateDocument(doc, publish = false) {
   for(const key of ['title','name','subtitle','archivesLabel','gachaLabel','adminLabel','footer','emptyText','emptyIcon','loadingText','filterAll','filterImage','filterGif','filterVideo','closeLabel'])text(site[key],`Сайт: ${key}`,key==='footer'||key==='subtitle'?1000:200);
   if(!site.name.trim()||!site.adminLabel.trim())fail('Укажите название сайта и подпись кнопки администратора.');
   for(const key of ['bg','panel','accent','text','muted','glow1','glow2'])color(site[key],`Сайт: ${key}`);
+  for(const key of ['randomLabel','randomTitle','randomSpinLabel']){text(site[key],`Рулетка: ${key}`,200);if(!site[key].trim())fail('Укажите подписи рулетки архива.');}
+  for(const key of ['randomColor','randomTextColor'])color(site[key],`Рулетка: ${key}`);
+  for(const key of ['randomEnabled','randomRespectFilter'])bool(site[key],`Рулетка: ${key}`);
+  num(site.randomDuration,'Длительность рулетки, мс',1000,10000,true);
   art(site.background,'Фон сайта');for(const key of ['titleFont','bodyFont'])choice(site[key],DISPLAY_FONTS,`Сайт: ${key}`);
   choice(site.layout,['masonry','grid'],'Макет галереи');choice(site.aspectRatio,['auto','1/1','4/5','3/4','16/9'],'Формат фотографий');
   for(const [key,min,max] of [['columns',1,6],['mobileColumns',1,2],['gap',0,40],['cardRadius',0,40],['contentWidth',700,2000],['headerPadding',16,120],['titleSize',32,120]])num(site[key],`Сайт: ${key}`,min,max,true);

@@ -57,3 +57,12 @@ test('photo adjustments default to centered artwork, round-trip and reject unsaf
  }
  assert.equal(photoStyle({photo:{zoom:'bad',x:Infinity,y:'0;display:none'}}),'--photo-zoom:1;--photo-x:0%;--photo-y:0%;');
 });
+
+test('archive roulette settings migrate old appearance and validate customization',()=>{
+ const input={config:structuredClone(config),gallery:{items:[],deleted:[]},appearance:structuredClone(DEFAULT_APPEARANCE)};
+ for(const key of Object.keys(input.appearance.site))if(key.startsWith('random'))delete input.appearance.site[key];
+ const normalized=validateDocument(input,true);assert.equal(normalized.appearance.site.randomEnabled,true);assert.equal(normalized.appearance.site.randomDuration,3000);assert.equal(input.appearance.site.randomEnabled,undefined);
+ Object.assign(normalized.appearance.site,{randomLabel:'Lucky archive',randomColor:'#123456',randomRespectFilter:true,randomDuration:1500,randomEnabled:false});
+ assert.deepEqual(validateDocument(normalized,true).appearance,normalized.appearance);
+ for(const change of [s=>s.randomLabel='',s=>s.randomColor='red',s=>s.randomDuration=0,s=>s.randomDuration=10001,s=>s.randomRespectFilter='yes']){const bad=structuredClone(normalized);change(bad.appearance.site);assert.throws(()=>validateDocument(bad,true));}
+});

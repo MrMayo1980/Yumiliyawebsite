@@ -4,6 +4,7 @@ export const DISPLAY_FONTS=['Cormorant Garamond','Montserrat','Philosopher','sys
 export const DEFAULT_APPEARANCE={
   site:{
     title:'Юмилия — Архив и гача',name:'Юмилия',subtitle:'Архив контента · Карточная гача',archivesLabel:'Архив',gachaLabel:'Гача',adminLabel:'Админ',footer:'🌸 Юмилия · Все права защищены',emptyText:'Фотографии появятся здесь',emptyIcon:'🌸',loadingText:'Загрузка — —',filterAll:'Все',filterImage:'Фото',filterGif:'GIF',filterVideo:'Видео',closeLabel:'✕ закрыть',
+    randomEnabled:true,randomLabel:'✦ Случайный файл',randomTitle:'Рулетка архива',randomSpinLabel:'Выбираем случайный файл…',randomColor:'#e8649a',randomTextColor:'#ffffff',randomDuration:3000,randomRespectFilter:false,
     bg:'#0e0d18',panel:'#13112a',accent:'#e8649a',text:'#e8e0f0',muted:'#a094af',glow1:'#1a0e2e',glow2:'#1a0826',background:'',titleFont:'Cormorant Garamond',bodyFont:'Montserrat',
     layout:'masonry',columns:4,mobileColumns:1,gap:10,cardRadius:6,contentWidth:1400,headerPadding:56,titleSize:88,aspectRatio:'auto',showSubtitle:true,showDecorations:true,showFilters:true,showFooter:true,hoverZoom:true,autoplayVideos:true
   },
@@ -27,10 +28,13 @@ const fontValue=value=>value==='system-ui'?'system-ui':JSON.stringify(value);
 const text=(selector,value,root=document)=>{const el=root.querySelector(selector);if(el)el.textContent=value;};
 function imageVar(style,key,value){const url=displayImageUrl(value);style.setProperty(key,url?`url(${JSON.stringify(url)})`:'none');}
 export function applySiteAppearance(site){
+  site={...DEFAULT_APPEARANCE.site,...site};
   document.title=site.title;const root=document.documentElement.style;
   for(const key of ['bg','panel','accent','text','muted','glow1','glow2'])root.setProperty('--site-'+key,site[key]);
   root.setProperty('--site-title-font',fontValue(site.titleFont));root.setProperty('--site-body-font',fontValue(site.bodyFont));
   for(const [key,value] of Object.entries({'width':site.contentWidth+'px','gap':site.gap+'px','radius':site.cardRadius+'px','header-padding':site.headerPadding+'px','title-size':site.titleSize+'px','columns':site.columns,'tablet-columns':Math.min(3,site.columns),'small-columns':Math.min(2,site.columns),'mobile-columns':site.mobileColumns,'ratio':site.aspectRatio}))root.setProperty('--site-'+key,String(value));
+  root.setProperty('--random-color',site.randomColor);root.setProperty('--random-text',site.randomTextColor);
+  const random=document.querySelector('#archive-random');if(random){random.hidden=!site.randomEnabled;random.textContent=site.randomLabel;}
   imageVar(root,'--site-background',site.background);
   document.body.dataset.galleryLayout=site.layout;document.body.dataset.galleryRatio=site.aspectRatio;document.body.dataset.hoverZoom=String(site.hoverZoom);
   for(const [selector,key] of Object.entries({'h1':'name','.subtitle':'subtitle','#archives-link':'archivesLabel','#gacha-link':'gachaLabel','#admin-link':'adminLabel','footer':'footer','#empty p':'emptyText','#empty .flower':'emptyIcon','#loading':'loadingText','#lightbox-close':'closeLabel','[data-filter="all"]':'filterAll','[data-filter="image"]':'filterImage','[data-filter="gif"]':'filterGif','[data-filter="video"]':'filterVideo'}))text(selector,site[key]);
