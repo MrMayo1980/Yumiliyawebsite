@@ -130,13 +130,13 @@ Admin browser drafts now retain their published baseline. Login and idle studio 
 Card IDs now use a persistent `config.nextCardId` allocation floor. Creating cards, duplicating cards/collections, deleting cards, importing older drafts and publishing cannot make a retired ID available again. Both publication backends reject reused IDs. Existing-card edits keep their IDs and player ownership. The affected recreated card was assigned a fresh ID in the repair publication; old saved ownership stays untouched and does not unlock that new card.
 
 
-Drugie Devushki is available at `index.html?section=drugie` (archive) and
+Другие девушки is available at `index.html?section=drugie` (archive) and
 `index.html?section=drugie#gacha` (game). The studio has a section switcher;
 `admin.html?section=drugie` selects it directly. Switching saves the current
 section's draft first. Publishing atomically includes both sections, while the
 editor, history restoration and imports change only the selected section.
 
-The second section starts with a snapshot of the current archive and cards.
+The second section starts with an empty archive and no gacha collections or cards.
 Its uploads, hidden media, photo/GIF/video filters, random roulette, appearance,
 collections, card IDs, game rules and rewards are independent. Existing image
 files can be shared without linking their settings. Main game progress remains

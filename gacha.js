@@ -1,4 +1,4 @@
-import {workspaceFromSearch,projectDocument,playerStorage,balanceNotice} from './sections.js?v=drugie-1';
+import {workspaceFromSearch,projectDocument,playerStorage,balanceNotice} from './sections.js?v=drugie-empty-1';
 import {normalizeFrameSettings,cardFrame,framePreset,photoStyle} from './frames.js?v=photo-1';
 (async function bootGacha(){
 const preview = new URLSearchParams(location.search).has('preview'),workspace=workspaceFromSearch(location.search);
@@ -20,7 +20,18 @@ async function loadConfig(){
 const CONFIG=normalizeFrameSettings(await loadConfig());
 const activeCols=CONFIG.cols.filter(c=>c.enabled),activeIds=new Set(activeCols.map(c=>c.id));
 const DATA={...CONFIG,cols:activeCols,cards:CONFIG.cards.filter(c=>c.enabled&&activeIds.has(c.col))};
-if(!DATA.cols.length||DATA.cols.some(col=>!DATA.cards.some(c=>c.col===col.id&&c.r==='N')))throw new Error('Для игры нужна активная коллекция с картами N.');
+if(!DATA.cols.length&&!DATA.cards.length){
+ document.title=CONFIG.title;
+ const panel=document.createElement('section'),title=document.createElement('h2'),message=document.createElement('p');
+ panel.className='gacha-empty';title.textContent='Коллекции скоро появятся';message.textContent='В этом разделе пока нет опубликованных карт.';panel.append(title,message);document.querySelector('.app').replaceChildren(panel);
+ let checking=false;
+ const refresh=async()=>{if(checking||preview||document.hidden)return;checking=true;try{const next=await loadConfig();if(next.cols.some(col=>col.enabled))location.reload();}catch{}finally{checking=false;}};
+ addEventListener('focus',refresh);addEventListener('storage',event=>{if(event.key==='yumiliya-publication')refresh();});
+ addEventListener('message',event=>{if(event.origin===location.origin&&event.source===window.parent&&event.data?.type==='yumiliya-refresh-game')refresh();});
+ document.addEventListener('visibilitychange',refresh);
+ return;
+}
+if(DATA.cols.some(col=>!DATA.cards.some(c=>c.col===col.id&&c.r==='N')))throw new Error('Для игры нужна активная коллекция с картами N.');
 const STORAGE=playerStorage(workspace,preview);
 if(preview&&new URLSearchParams(location.search).has('reset'))localStorage.removeItem(STORAGE);
 const E=CONFIG.economy,L=CONFIG.labels;

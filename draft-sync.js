@@ -1,4 +1,4 @@
-import {validateDocument} from './validation.js?v=drugie-1';
+import {validateDocument} from './validation.js?v=drugie-empty-1';
 const clone=value=>structuredClone(value),same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 const record=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
 const keyFor=path=>/(^|\.)config\.(cards|cols)$/.test(path)?'id':/(^|\.)gallery\.items$/.test(path)?'url':null;

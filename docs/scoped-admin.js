@@ -1,4 +1,4 @@
-import {projectDocument,replaceSection} from './sections.js?v=drugie-1';
+import {projectDocument,replaceSection} from './sections.js?v=drugie-empty-1';
 // Both sections publish atomically; the editor only receives its selected section.
 export function createScopedAdminApi(rawApi,getWorkspace){
  let fullDraft;

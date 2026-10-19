@@ -8,10 +8,10 @@ import {mergeGallery} from '../gallery.js';
 import {validateDocumentTransition} from '../card-ids.js';
 import {synchronizeDraft} from '../draft-sync.js';
 const config=JSON.parse(await readFile(new URL('../data/gacha.json',import.meta.url),'utf8'));
-const fresh=()=>validateDocument({config:structuredClone(config),gallery:{items:[],deleted:[]}},true);
-test('second section duplicates content once and keeps configuration, gallery and card ID history independent',()=>{
+const fresh=()=>{const doc=validateDocument({config:structuredClone(config),gallery:{items:[],deleted:[]}},true);doc.sections.drugie.config=structuredClone(doc.config);doc.sections.drugie.config.title='Другие девушки — Гача';return doc;};
+test('second section keeps configuration, gallery and card ID history independent',()=>{
  const document=fresh(),other=document.sections.drugie;
- assert.equal(other.appearance.site.name,'Drugie Devushki');assert.deepEqual(other.config.cards,document.config.cards);
+ assert.equal(other.appearance.site.name,'Другие девушки');assert.deepEqual(other.config.cards,document.config.cards);
  other.config.cards[0].name='Other card';other.config.nextCardId=500;other.gallery.items.push({url:'assets/media/other.jpg',type:'image'});
  assert.notEqual(document.config.cards[0].name,'Other card');assert.notEqual(document.config.nextCardId,500);assert.equal(document.gallery.items.length,0);
  const normalized=validateDocument(document,true);assert.equal(normalized.sections.drugie.config.cards[0].name,'Other card');
@@ -34,7 +34,7 @@ test('saving either editor preserves the other section and a scoped history rest
  workspace='main';const main=(await api('api/admin/state')).draft;main.config.economy.startingGems=222;
  await api('api/admin/draft',{method:'PUT',data:{document:main}});await api('api/admin/publish',{method:'POST'});
  assert.equal(published.sections.drugie.config.title,'Independent other game');assert.equal(published.sections.drugie.gallery.items.length,1);assert.equal(published.config.economy.startingGems,222);assert.notEqual(published.sections.drugie.config.economy.startingGems,222);
- workspace='drugie';assert.equal((await api('api/admin/history/0')).document.config.title,'Drugie Devushki — Гача');
+ workspace='drugie';assert.equal((await api('api/admin/history/0')).document.config.title,'Другие девушки — Гача');
  const replaced=replaceSection(document,'drugie',fresh());assert.equal(replaced.config.economy.startingGems,222);
 });
 test('secondary card retirement is enforced and draft sync merges secondary cards independently',()=>{
@@ -45,4 +45,13 @@ test('secondary card retirement is enforced and draft sync merges secondary card
  remote.sections.drugie.config.cards.push({...remote.sections.drugie.config.cards[1],id:100,name:'Published other'});
  const result=synchronizeDraft({revision:1,draftVersion:0,draft:local,basePublished:base},{revision:2,published:remote});
  assert.equal(result.draft.config.cards[0].name,'Local main');assert.equal(result.draft.sections.drugie.config.cards[0].name,'Local other');assert.equal(result.draft.sections.drugie.config.cards.at(-1).name,'Published other');
+});
+
+test('new and emptied secondary sections publish with no archive, collections or cards',()=>{
+ const doc=validateDocument({config:structuredClone(config),gallery:{items:[],deleted:[]}},true),other=doc.sections.drugie;
+ assert.equal(other.appearance.site.name,'Другие девушки');assert.equal(other.config.cards.length,0);assert.equal(other.config.cols.length,0);assert.equal(other.gallery.items.length,0);assert.equal(other.gallery.includeLegacy,false);
+ assert.equal(mergeGallery([{url:'assets/media/original.jpg',type:'image'}],other.gallery).length,0);
+ assert.equal(validateDocument(doc,true).sections.drugie.config.cards.length,0);
+ const emptyMain=structuredClone(doc);emptyMain.config.cards=[];emptyMain.config.cols=[];assert.throws(()=>validateDocument(emptyMain,true));
+ const missingN=structuredClone(doc);missingN.sections.drugie.config.cols=[structuredClone(config.cols[0])];assert.throws(()=>validateDocument(missingN,true));
 });
