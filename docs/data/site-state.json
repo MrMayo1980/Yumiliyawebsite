@@ -1,9 +1,27 @@
 {
-  "revision": 11,
-  "updatedAt": "2026-10-19T06:48:51.137Z",
+  "revision": 12,
+  "updatedAt": "2026-10-19T07:10:59.592Z",
   "published": {
     "config": {
       "cols": [
+        {
+          "id": "Yumi",
+          "name": "Юмилия",
+          "desc": "Коллекция карточек чертовки Юмилии.",
+          "cover": "assets/media/0d34a055-0711-4a62-97f0-63e2c4068364.jpg",
+          "enabled": true,
+          "settings": {
+            "price": 170,
+            "sr": 2,
+            "r": 14,
+            "money": 50,
+            "pityR": 100,
+            "pityS": 150,
+            "banner": 0,
+            "bannerRate": 25,
+            "bannerGuarantee": true
+          }
+        },
         {
           "id": "mb",
           "name": "Мэйби Бейби",
@@ -335,10 +353,154 @@
           "frame": "assets/gacha/9fe8fd284fe08cada5a0.webp",
           "frameEnabled": true,
           "id": 20,
-          "col": "mb",
-          "r": "N",
-          "name": "Новая карта",
+          "col": "Yumi",
+          "r": "R",
+          "name": "Юмилия R1",
           "img": "assets/media/b7e19afd-cdb2-413c-89bd-f1a119d0e4d6.jpg",
+          "enabled": true,
+          "weight": 1
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 0,
+            "y": 0
+          },
+          "frame": "assets/gacha/8fc111987e4b70f595eb.webp",
+          "frameEnabled": true,
+          "id": 21,
+          "col": "Yumi",
+          "r": "N",
+          "name": "Юмилия N1",
+          "img": "assets/media/40f100f6-82ef-4d51-bcd4-dc3c52788db3.jpg",
+          "enabled": true,
+          "weight": 2
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 0,
+            "y": 0
+          },
+          "frame": "",
+          "frameEnabled": true,
+          "id": 22,
+          "col": "Yumi",
+          "r": "N",
+          "name": "Юмилия N2",
+          "img": "assets/media/e214e011-63f1-458f-b0f6-fa9db60cdb90.jpg",
+          "enabled": true,
+          "weight": 2
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 0,
+            "y": 0
+          },
+          "frame": "",
+          "frameEnabled": true,
+          "id": 23,
+          "col": "Yumi",
+          "r": "N",
+          "name": "Юмилия N3",
+          "img": "assets/media/393ae99d-87e9-4db9-bac1-d647d8362906.jpg",
+          "enabled": true,
+          "weight": 2
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 7,
+            "y": 0
+          },
+          "frame": "assets/gacha/9fe8fd284fe08cada5a0.webp",
+          "frameEnabled": true,
+          "id": 24,
+          "col": "Yumi",
+          "r": "R",
+          "name": "Юмилия R2",
+          "img": "assets/media/ec34e373-0dfa-476f-b55f-f1a2b29bc8b4.jpg",
+          "enabled": true,
+          "weight": 1
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 0,
+            "y": 0
+          },
+          "frame": "",
+          "frameEnabled": true,
+          "id": 25,
+          "col": "Yumi",
+          "r": "R",
+          "name": "Юмилия R3",
+          "img": "assets/media/d872c3bc-6864-41dc-a647-dafe46d7b22b.jpg",
+          "enabled": true,
+          "weight": 1
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 5,
+            "y": 0
+          },
+          "frame": "",
+          "frameEnabled": true,
+          "id": 26,
+          "col": "Yumi",
+          "r": "SR",
+          "name": "Юмилия SR1",
+          "img": "assets/media/f64bd8c3-4cad-4cd1-89b1-fa156b183f90.png",
+          "enabled": true,
+          "weight": 1
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 0,
+            "y": 0
+          },
+          "frame": "",
+          "frameEnabled": true,
+          "id": 27,
+          "col": "Yumi",
+          "r": "SR",
+          "name": "Юмилия SR2",
+          "img": "assets/media/5412f9a0-4419-4dc6-a688-6cdd5d2489de.jpg",
+          "enabled": true,
+          "weight": 1
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 0,
+            "y": 0
+          },
+          "frame": "",
+          "frameEnabled": true,
+          "id": 28,
+          "col": "Yumi",
+          "r": "SR",
+          "name": "Юмилия SR3",
+          "img": "assets/media/0ddb1066-fb05-4a4a-a202-806c4efd3e04.jpg",
+          "enabled": true,
+          "weight": 1
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 0,
+            "y": 0
+          },
+          "frame": "",
+          "frameEnabled": true,
+          "id": 29,
+          "col": "Yumi",
+          "r": "SR",
+          "name": "Юмилия SR4",
+          "img": "assets/media/6f2d15c8-942a-49bf-9448-8018a2b819a4.jpg",
           "enabled": true,
           "weight": 1
         }
@@ -499,7 +661,7 @@
           "body": "Прогресс сохраняется в этом браузере. Кнопка 💾 позволяет скачать или скопировать резервную копию и восстановить её на другом устройстве."
         }
       ],
-      "nextCardId": 21
+      "nextCardId": 30
     },
     "appearance": {
       "site": {
