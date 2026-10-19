@@ -1,6 +1,6 @@
 {
-  "revision": 10,
-  "updatedAt": "2026-10-18T19:55:22.243Z",
+  "revision": 11,
+  "updatedAt": "2026-10-19T06:48:51.137Z",
   "published": {
     "config": {
       "cols": [
@@ -519,9 +519,9 @@
         "filterVideo": "Видео",
         "closeLabel": "✕ закрыть",
         "randomEnabled": true,
-        "randomLabel": "✦ Случайный файл",
-        "randomTitle": "Рулетка архива",
-        "randomSpinLabel": "Выбираем случайный файл…",
+        "randomLabel": "✦ Рандомная Дрочка",
+        "randomTitle": "Рулетка Дрочки",
+        "randomSpinLabel": "Выбираем на что будете дрочить...",
         "randomColor": "#e8649a",
         "randomTextColor": "#ffffff",
         "randomDuration": 3000,
