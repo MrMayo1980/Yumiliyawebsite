@@ -1,4 +1,4 @@
-import {projectDocument,replaceSection} from './sections.js?v=drugie-empty-1';
+import {projectDocument,replaceSection} from './sections.js?v=publish-fix-1';
 // Both sections publish atomically; the editor only receives its selected section.
 export function createScopedAdminApi(rawApi,getWorkspace){
  let fullDraft;
@@ -8,6 +8,7 @@ export function createScopedAdminApi(rawApi,getWorkspace){
    next=replaceSection(fullDraft,workspace,options.data.document);
    options={...options,data:{...options.data,document:next}};
   }
+  if(path==='api/admin/publish'&&options.method==='POST')options={...options,data:{...options.data,workspace}};
   const result=await rawApi(path,options);
   if(next)fullDraft=structuredClone(next);
   if(path==='api/admin/state'){

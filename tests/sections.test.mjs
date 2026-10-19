@@ -21,11 +21,11 @@ test('second section keeps configuration, gallery and card ID history independen
  malformed.sections.drugie=document;assert.throws(()=>validateDocument(malformed,true));
 });
 test('saving either editor preserves the other section and a scoped history restores only the selected section',async()=>{
- let document=fresh(),workspace='drugie',published;
+ let document=fresh(),workspace='drugie',published,live=structuredClone(document);
  const raw=async(path,options)=>{
-  if(path==='api/admin/state')return {draft:structuredClone(document),basePublished:structuredClone(document),revision:1,draftVersion:0};
+  if(path==='api/admin/state')return {draft:structuredClone(document),basePublished:structuredClone(live),revision:1,draftVersion:0};
   if(path==='api/admin/draft'){document=validateDocument(options.data.document);return {draftVersion:1};}
-  if(path==='api/admin/publish'){published=structuredClone(document);return {revision:2};}
+  if(path==='api/admin/publish'){published=validateDocument(replaceSection(live,options.data.workspace,projectDocument(document,options.data.workspace)),true);live=structuredClone(published);return {revision:2};}
   if(path==='api/admin/history/0')return {document:fresh()};
  };
  const api=createScopedAdminApi(raw,()=>workspace),other=(await api('api/admin/state')).draft;
@@ -33,8 +33,8 @@ test('saving either editor preserves the other section and a scoped history rest
  await api('api/admin/draft',{method:'PUT',data:{document:other}});assert.equal(document.config.title,config.title);
  workspace='main';const main=(await api('api/admin/state')).draft;main.config.economy.startingGems=222;
  await api('api/admin/draft',{method:'PUT',data:{document:main}});await api('api/admin/publish',{method:'POST'});
- assert.equal(published.sections.drugie.config.title,'Independent other game');assert.equal(published.sections.drugie.gallery.items.length,1);assert.equal(published.config.economy.startingGems,222);assert.notEqual(published.sections.drugie.config.economy.startingGems,222);
- workspace='drugie';assert.equal((await api('api/admin/history/0')).document.config.title,'Другие девушки — Гача');
+ assert.equal(published.sections.drugie.config.title,'Другие девушки — Гача');assert.equal(published.sections.drugie.gallery.items.length,0);assert.equal(document.sections.drugie.config.title,'Independent other game');assert.equal(published.config.economy.startingGems,222);assert.notEqual(published.sections.drugie.config.economy.startingGems,222);
+ workspace='drugie';await api('api/admin/publish',{method:'POST'});assert.equal(published.sections.drugie.config.title,'Independent other game');assert.equal(published.sections.drugie.gallery.items.length,1);assert.equal(published.config.economy.startingGems,222);assert.equal((await api('api/admin/history/0')).document.config.title,'Другие девушки — Гача');
  const replaced=replaceSection(document,'drugie',fresh());assert.equal(replaced.config.economy.startingGems,222);
 });
 test('secondary card retirement is enforced and draft sync merges secondary cards independently',()=>{
@@ -54,4 +54,10 @@ test('new and emptied secondary sections publish with no archive, collections or
  assert.equal(validateDocument(doc,true).sections.drugie.config.cards.length,0);
  const emptyMain=structuredClone(doc);emptyMain.config.cards=[];emptyMain.config.cols=[];assert.throws(()=>validateDocument(emptyMain,true));
  const missingN=structuredClone(doc);missingN.sections.drugie.config.cols=[structuredClone(config.cols[0])];assert.throws(()=>validateDocument(missingN,true));
+});
+
+test('a disabled secondary collection may be published before cards are ready',()=>{
+ const doc=validateDocument({config:structuredClone(config),gallery:{items:[],deleted:[]}},true);
+ doc.sections.drugie.config.cols=[{...structuredClone(config.cols[0]),enabled:false}];
+ assert.doesNotThrow(()=>validateDocument(doc,true));doc.sections.drugie.config.cols[0].enabled=true;assert.throws(()=>validateDocument(doc,true));
 });

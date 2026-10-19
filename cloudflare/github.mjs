@@ -1,3 +1,4 @@
+import {projectDocument,replaceSection} from '../sections.js';
 import {validateDocumentTransition} from '../card-ids.js';
 import {validateDocument} from '../validation.js';
 const problem=(message,status=400)=>Object.assign(new Error(message),{status});
@@ -23,9 +24,11 @@ export class GithubPublisher{
   const state=JSON.parse(new TextDecoder().decode(bytes));state.published=validateDocument(state.published,true);return state;
  }
  async blob(content,encoding='utf-8'){return (await this.request(this.base+'/git/blobs',{method:'POST',data:{content,encoding}})).sha;}
- async publish(document,revision,files){
-  const doc=validateDocument(document,true),head=await this.head(),current=await this.readState(head);
+ async publish(document,revision,files,workspace){
+  if(workspace!==undefined&&!['main','drugie'].includes(workspace))throw problem('Выберите раздел для публикации.',422);
+  const head=await this.head(),current=await this.readState(head);
   if(current.revision!==revision)throw problem('Сайт уже изменён в другой вкладке или на другом устройстве. Экспортируйте черновик и загрузите актуальную версию.',409);
+  const doc=validateDocument(workspace?replaceSection(current.published,workspace,projectDocument(document,workspace)):document,true);
   validateDocumentTransition(current.published,doc);
   const parent=await this.request(this.base+'/git/commits/'+head),updatedAt=new Date().toISOString(),state={revision:revision+1,updatedAt,published:doc};
   const tree=[];

@@ -1,5 +1,6 @@
-import {synchronizeDraft} from './draft-sync.js?v=drugie-empty-1';
-import {validateDocument} from './validation.js?v=drugie-empty-1';
+import {projectDocument,replaceSection} from './sections.js?v=publish-fix-1';
+import {synchronizeDraft} from './draft-sync.js?v=publish-fix-1';
+import {validateDocument} from './validation.js?v=publish-fix-1';
 import {pagesSettings,registerPendingAsset,resolvePendingAsset} from './hosting.js';
 const clone=value=>structuredClone(value);
 const problem=(message,status=400)=>Object.assign(new Error(message),{status});
@@ -10,20 +11,20 @@ export class PasswordPublisher{
   this.base=url.href.replace(/\/$/,'');this.fetcher=fetcher;this.session='';
  }
  async request(path,{method='GET',data,body}={}){
-  let response;try{response=await this.fetcher(this.base+'/api/'+path,{method,headers:{...(this.session?{Authorization:'Bearer '+this.session}:{}),...(data!==undefined||body!==undefined?{'Content-Type':'application/json'}:{})},body:body??(data!==undefined?JSON.stringify(data):undefined),credentials:'omit',cache:'no-store',redirect:'error'});}catch{throw problem('Не удалось связаться с сервисом входа. Повторите позже.',503);}
+  let response;try{response=await this.fetcher(this.base+'/api/'+path,{method,headers:{...(this.session?{Authorization:'Bearer '+this.session}:{}),...(data!==undefined||body!==undefined?{'Content-Type':'application/json'}:{})},body:body??(data!==undefined?JSON.stringify(data):undefined),credentials:'omit',cache:'no-store',redirect:'error',signal:AbortSignal.timeout(path==='publish'?90000:path.startsWith('upload-blob')?120000:30000)});}catch{throw problem('Не удалось связаться с сервисом входа. Повторите позже.',503);}
   let result;try{result=await response.json();}catch{throw problem('Сервис входа временно недоступен.',503);}
   if(!response.ok){if(response.status===401)this.session='';throw problem(result.error||'Не удалось выполнить запрос.',response.status);}return result;
  }
  async login(password){const result=await this.request('login',{method:'POST',data:{password}});this.session=result.session;return '';}
  async readState(){return this.request('published');}
  async head(){return '';}
- async publish(document,revision,files){
+ async publish(document,revision,files,workspace){
   const uploaded=[];
   for(const file of files){
    const bytes=new Uint8Array(await file.blob.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));
    const result=await this.request('upload-blob?path='+encodeURIComponent(file.path),{method:'POST',data:{content:btoa(binary),encoding:'base64'}});uploaded.push({path:file.path,sha:result.sha});
   }
-  return this.request('publish',{method:'POST',data:{document,revision,files:uploaded}});
+  return this.request('publish',{method:'POST',data:{document,revision,files:uploaded,...(workspace?{workspace}:{})}});
  }
  async history(){return this.request('history');}
  async logout(){try{return await this.request('logout',{method:'POST',data:{}});}finally{this.session='';}}
@@ -80,8 +81,11 @@ export async function pagesApi(path,{method='GET',data,raw}={}){
  if(path==='api/admin/publish'&&method==='POST'){
   if(data.expectedRevision!==state.revision||data.expectedDraftVersion!==state.draftVersion)throw problem('Черновик изменился. Повторите публикацию.',409);
   const saved=await storage('state','get','draft');if(saved&&(saved.draftVersion!==state.draftVersion||saved.revision!==state.revision))throw problem('Черновик изменён в другой вкладке. Экспортируйте изменения перед обновлением.',409);
-  const paths=new Set();const collect=value=>{if(typeof value==='string')paths.add(value);else if(Array.isArray(value))value.forEach(collect);else if(value&&typeof value==='object')Object.values(value).forEach(collect);};collect(state.draft);const referenced=(await files()).filter(file=>paths.has(file.path));
-  const result=await client.publish(state.draft,state.revision,referenced);state.revision=result.revision;state.updatedAt=result.updatedAt;state.draft=validateDocument(result.published||state.draft);state.basePublished=clone(state.draft);state.stale=false;state.syncNotice='';await persist();for(const file of referenced)await storage('files','delete',file.path);return {revision:state.revision,updatedAt:state.updatedAt,commit:result.commit};
+  const workspace=data.workspace||'main';if(!['main','drugie'].includes(workspace))throw problem('Выберите раздел для публикации.',422);
+  const candidate=validateDocument(replaceSection(state.basePublished,workspace,projectDocument(state.draft,workspace)),true);
+  const paths=new Set();const collect=value=>{if(typeof value==='string')paths.add(value);else if(Array.isArray(value))value.forEach(collect);else if(value&&typeof value==='object')Object.values(value).forEach(collect);};collect(candidate);const referenced=(await files()).filter(file=>paths.has(file.path));
+  const result=await client.publish(candidate,state.revision,referenced,workspace),published=validateDocument(result.published||candidate,true);
+  state.revision=result.revision;state.updatedAt=result.updatedAt;state.draft=validateDocument(replaceSection(state.draft,workspace,projectDocument(published,workspace)));state.basePublished=clone(published);state.stale=false;state.syncNotice='';await persist();for(const file of referenced)await storage('files','delete',file.path);return {revision:state.revision,updatedAt:state.updatedAt,commit:result.commit};
  }
  if(path==='api/admin/upload'&&method==='POST'){
   if(!raw||raw.size>40*1024*1024)throw problem('Файл должен быть не больше 40 МБ.',413);

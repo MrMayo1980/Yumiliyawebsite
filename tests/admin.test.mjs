@@ -24,7 +24,8 @@ test('local balance control preserves saved progress, rejects invalid amounts an
  const store=new Map([['gacha3',JSON.stringify({gems:42,inv:{7:2},free:3,shards:9})]]),nodes=new Map();
  const document={getElementById(id){if(!nodes.has(id))nodes.set(id,{value:'12345',addEventListener(){}});return nodes.get(id);},querySelectorAll:()=>[],addEventListener(){}};
  const context=vm.createContext({workspaceFromSearch,playerStorage,balanceNotice,createScopedAdminApi,document,window:{addEventListener(){}},location:new URL('http://localhost/admin.html'),URLSearchParams,structuredClone,DEFAULT_APPEARANCE,isPages:()=>false,localStorage:{getItem:key=>store.get(key),setItem:(key,value)=>store.set(key,value)},setTimeout:()=>1,clearTimeout(){}});
- vm.runInContext(source.replace(/^import[^\n]*\n/gm,'').replace('initializeStudio();',"globalThis.balance={save:actions['save-local-balance'],dirty:()=>dirty};"),context);
+ vm.runInContext(source.replace(/^import[^\n]*\n/gm,'').replace('initializeStudio();',"globalThis.balance={save:actions['save-local-balance'],dirty:()=>dirty,feedback:notify};"),context);
  context.balance.save();const state=JSON.parse(store.get('gacha3'));assert.equal(state.gems,12345);assert.deepEqual(state.inv,{7:2});assert.equal(state.free,3);assert.equal(state.shards,9);assert.equal(context.balance.dirty(),false);assert.equal(JSON.parse(store.get('yumiliya-local-balance')).gems,12345);
  for(const value of ['', '-1', '2.5', 'abc']){nodes.get('local-balance').value=value;assert.throws(()=>context.balance.save());assert.equal(JSON.parse(store.get('gacha3')).gems,12345);}
+ nodes.get('modal').open=true;context.balance.feedback('Publication failed',true);assert.equal(nodes.get('modal-error').hidden,false);assert.equal(nodes.get('modal-error').textContent,'Publication failed');
 });

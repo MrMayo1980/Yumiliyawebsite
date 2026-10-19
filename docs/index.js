@@ -1,8 +1,8 @@
-import {workspaceFromSearch,projectDocument} from './sections.js?v=drugie-empty-1';
+import {workspaceFromSearch,projectDocument} from './sections.js?v=publish-fix-1';
 import {createArchiveRoulette,randomPool} from './archive-random.js?v=archive-random-1';
 import {isPages,loadPublished,loadPreview,providePreview} from './hosting.js';
-import {loadLegacyGallery,mergeGallery,mediaType,safeMediaUrl,createVideoLoader} from './gallery.js?v=drugie-empty-1';
-import {DEFAULT_APPEARANCE,loadAppearance,applySiteAppearance} from './appearance.js?v=drugie-empty-1';
+import {loadLegacyGallery,mergeGallery,mediaType,safeMediaUrl,createVideoLoader} from './gallery.js?v=publish-fix-1';
+import {DEFAULT_APPEARANCE,loadAppearance,applySiteAppearance} from './appearance.js?v=publish-fix-1';
 const preview=new URLSearchParams(location.search).has('preview'),workspace=workspaceFromSearch(location.search);
 const sectionSuffix=workspace==='drugie'?'section=drugie':'';
 let site=structuredClone(DEFAULT_APPEARANCE.site);

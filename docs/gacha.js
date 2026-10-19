@@ -1,4 +1,4 @@
-import {workspaceFromSearch,projectDocument,playerStorage,balanceNotice} from './sections.js?v=drugie-empty-1';
+import {workspaceFromSearch,projectDocument,playerStorage,balanceNotice} from './sections.js?v=publish-fix-1';
 import {normalizeFrameSettings,cardFrame,framePreset,photoStyle} from './frames.js?v=photo-1';
 (async function bootGacha(){
 const preview = new URLSearchParams(location.search).has('preview'),workspace=workspaceFromSearch(location.search);

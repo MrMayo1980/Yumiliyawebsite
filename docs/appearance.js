@@ -1,4 +1,4 @@
-import {projectDocument,workspaceFromSearch} from './sections.js?v=drugie-empty-1';
+import {projectDocument,workspaceFromSearch} from './sections.js?v=publish-fix-1';
 import {isPages,loadPublished,loadPreview,localMediaUrl,resolvePendingAsset} from './hosting.js';
 // Public display settings only. Authentication and permissions stay on the server.
 export const DISPLAY_FONTS=['Cormorant Garamond','Montserrat','Philosopher','system-ui'];

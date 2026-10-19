@@ -133,8 +133,9 @@ Card IDs now use a persistent `config.nextCardId` allocation floor. Creating car
 Другие девушки is available at `index.html?section=drugie` (archive) and
 `index.html?section=drugie#gacha` (game). The studio has a section switcher;
 `admin.html?section=drugie` selects it directly. Switching saves the current
-section's draft first. Publishing atomically includes both sections, while the
-editor, history restoration and imports change only the selected section.
+section's draft first. Publishing updates only the selected section; drafts in the other section
+remain saved and unpublished. History restoration and imports also change only
+the selected section.
 
 The second section starts with an empty archive and no gacha collections or cards.
 Its uploads, hidden media, photo/GIF/video filters, random roulette, appearance,
