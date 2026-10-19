@@ -67,12 +67,3 @@ test('Worker throttles failed logins persistently and refuses expired sessions',
  for(let i=0;i<8;i++)assert.equal((await call('/api/login',{method:'POST',data:{password:'wrong'},ip:'192.0.2.8'})).status,401);
  assert.equal((await call('/api/login',{method:'POST',data:{password},ip:'192.0.2.8'})).status,429);
 });
-
-test('Worker publishes a selected section without publishing or validating unfinished games in the other section',async t=>{
- const {call,login}=await fixture(t),session=await login(),draft=structuredClone(document);
- draft.appearance.site.name='Scoped main';draft.sections.drugie.config.cols=[{...structuredClone(draft.config.cols[0]),enabled:true}];draft.sections.drugie.config.cards=[];
- const response=await call('/api/publish',{method:'POST',session,data:{document:draft,revision:0,files:[],workspace:'main'}});
- assert.equal(response.status,200);const result=await response.json();assert.equal(result.published.appearance.site.name,'Scoped main');assert.deepEqual(result.published.sections,document.sections);
- const invalid=await call('/api/publish',{method:'POST',session,data:{document:draft,revision:0,files:[],workspace:'drugie'}});assert.equal(invalid.status,422);
- assert.equal((await call('/api/publish',{method:'POST',session,data:{document:draft,revision:0,files:[],workspace:'invalid'}})).status,422);
-});

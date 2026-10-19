@@ -1,38 +1,26 @@
-import {workspaceFromSearch,projectDocument,playerStorage,balanceNotice} from './sections.js?v=publish-fix-1';
 import {normalizeFrameSettings,cardFrame,framePreset,photoStyle} from './frames.js?v=photo-1';
 (async function bootGacha(){
-const preview = new URLSearchParams(location.search).has('preview'),workspace=workspaceFromSearch(location.search);
+const preview = new URLSearchParams(location.search).has('preview');
 let fetchedRevision=null;
 async function loadConfig(){
  if(window.YUMILIYA_PAGES){
   const {loadPublished,loadPreview,materializeAssets}=await import('./hosting.js?v=catalog-1');
-  if(preview)return materializeAssets(projectDocument(await loadPreview(),workspace).config);
-  const state=await loadPublished({fresh:true});fetchedRevision=state.revision;return materializeAssets(projectDocument(state.published,workspace).config);
+  if(preview)return materializeAssets((await loadPreview()).config);
+  const state=await loadPublished({fresh:true});fetchedRevision=state.revision;return materializeAssets(state.published.config);
  }
- const endpoint=(preview?'api/admin/preview':'api/gacha')+(workspace==='drugie'?'?section=drugie':'');
+ const endpoint=preview?'api/admin/preview':'api/gacha';
  try{const response=await fetch(endpoint,{cache:'no-store'});if(response.ok)return await response.json();if(preview)throw new Error('Войдите в админ-панель для предпросмотра.')}catch(e){if(preview)throw e}
  // A plain static server must use the published catalog too, rather than the original seed cards.
  const published=await fetch('data/site-state.json?t='+Date.now(),{cache:'no-store'});
- if(published.ok){const state=await published.json();if(!state.published?.config)throw new Error('Опубликованный каталог карт повреждён.');fetchedRevision=state.revision;return projectDocument(state.published,workspace).config;}
+ if(published.ok){const state=await published.json();if(!state.published?.config)throw new Error('Опубликованный каталог карт повреждён.');fetchedRevision=state.revision;return state.published.config;}
  if(published.status!==404)throw new Error('Не удалось обновить опубликованный каталог карт.');
  const response=await fetch('data/gacha.json',{cache:'no-store'});if(!response.ok)throw new Error('Настройки игры недоступны.');return await response.json();
 }
 const CONFIG=normalizeFrameSettings(await loadConfig());
 const activeCols=CONFIG.cols.filter(c=>c.enabled),activeIds=new Set(activeCols.map(c=>c.id));
 const DATA={...CONFIG,cols:activeCols,cards:CONFIG.cards.filter(c=>c.enabled&&activeIds.has(c.col))};
-if(!DATA.cols.length&&!DATA.cards.length){
- document.title=CONFIG.title;
- const panel=document.createElement('section'),title=document.createElement('h2'),message=document.createElement('p');
- panel.className='gacha-empty';title.textContent='Коллекции скоро появятся';message.textContent='В этом разделе пока нет опубликованных карт.';panel.append(title,message);document.querySelector('.app').replaceChildren(panel);
- let checking=false;
- const refresh=async()=>{if(checking||preview||document.hidden)return;checking=true;try{const next=await loadConfig();if(next.cols.some(col=>col.enabled))location.reload();}catch{}finally{checking=false;}};
- addEventListener('focus',refresh);addEventListener('storage',event=>{if(event.key==='yumiliya-publication')refresh();});
- addEventListener('message',event=>{if(event.origin===location.origin&&event.source===window.parent&&event.data?.type==='yumiliya-refresh-game')refresh();});
- document.addEventListener('visibilitychange',refresh);
- return;
-}
-if(DATA.cols.some(col=>!DATA.cards.some(c=>c.col===col.id&&c.r==='N')))throw new Error('Для игры нужна активная коллекция с картами N.');
-const STORAGE=playerStorage(workspace,preview);
+if(!DATA.cols.length||DATA.cols.some(col=>!DATA.cards.some(c=>c.col===col.id&&c.r==='N')))throw new Error('Для игры нужна активная коллекция с картами N.');
+const STORAGE=preview?'gacha_admin_preview':'gacha3';
 if(preview&&new URLSearchParams(location.search).has('reset'))localStorage.removeItem(STORAGE);
 const E=CONFIG.economy,L=CONFIG.labels;
 
@@ -322,7 +310,7 @@ applyTheme();g48Load();daily();render();
 try{const remembered=Number(sessionStorage.getItem(STORAGE+'_catalog_tab'));sessionStorage.removeItem(STORAGE+'_catalog_tab');if([1,2,3,4].includes(remembered))tab(remembered);}catch{}
 watchCatalog();
 if(!preview)addEventListener('storage',event=>{
- if(event.key!==balanceNotice(workspace)||!event.newValue)return;
+ if(event.key!=='yumiliya-local-balance'||!event.newValue)return;
  try{const {gems}=JSON.parse(event.newValue);if(Number.isSafeInteger(gems)&&gems>=0){S.gems=gems;render();}}catch{}
 });
 

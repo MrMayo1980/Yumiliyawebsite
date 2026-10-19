@@ -1,7 +1,7 @@
-import {validateDocument} from './validation.js?v=publish-fix-1';
+import {validateDocument} from './validation.js';
 const clone=value=>structuredClone(value),same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 const record=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
-const keyFor=path=>/(^|\.)config\.(cards|cols)$/.test(path)?'id':/(^|\.)gallery\.items$/.test(path)?'url':null;
+const keyFor=path=>path==='config.cards'||path==='config.cols'?'id':path==='gallery.items'?'url':null;
 function merge(base,local,remote,path,conflicts){
  if(same(local,base))return clone(remote);
  if(same(remote,base)||same(local,remote))return clone(local);
@@ -25,7 +25,7 @@ function merge(base,local,remote,path,conflicts){
 export function synchronizeDraft(saved,published,historicalBase){
  const latest=validateDocument(published.published),base=saved?.basePublished||historicalBase;
  if(!saved?.draft)return {draft:latest,basePublished:clone(latest),draftVersion:0,notice:'',backup:false};
- let local;try{const input=clone(saved.draft);if(!input.sections&&latest.sections)input.sections=clone(latest.sections);local=validateDocument(input);}catch{return {draft:latest,basePublished:clone(latest),draftVersion:(saved.draftVersion||0)+1,notice:'Студия показывает опубликованную версию. Предыдущий черновик сохранён в резервной копии.',backup:true};}
+ let local;try{local=validateDocument(saved.draft);}catch{return {draft:latest,basePublished:clone(latest),draftVersion:(saved.draftVersion||0)+1,notice:'Студия показывает опубликованную версию. Предыдущий черновик сохранён в резервной копии.',backup:true};}
  if(saved.revision===published.revision)return {draft:local,basePublished:clone(latest),draftVersion:saved.draftVersion||0,notice:'',backup:false};
  if(!base)return {draft:latest,basePublished:clone(latest),draftVersion:(saved.draftVersion||0)+1,notice:'Загружена актуальная публикация. Старый черновик сохранён в резервной копии.',backup:true};
  const conflicts=[];let draft;

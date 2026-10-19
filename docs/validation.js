@@ -1,8 +1,7 @@
-import {emptySection} from './sections.js?v=publish-fix-1';
 import {normalizeCardIds} from './card-ids.js';
 import {normalizeFrameSettings} from './frames.js';
-import {DEFAULT_APPEARANCE,DISPLAY_FONTS} from './appearance.js?v=publish-fix-1';
-export function validateDocument(doc, publish = false, sectionOnly = false) {
+import {DEFAULT_APPEARANCE,DISPLAY_FONTS} from './appearance.js?v=archive-random-1';
+export function validateDocument(doc, publish = false) {
   const fail = message => {throw Object.assign(new Error(message), {status:422});};
   const obj = (v,n) => {if(!v || typeof v!=='object' || Array.isArray(v)) fail(`${n}: требуется объект.`);};
   const text = (v,n,max=2000) => {if(typeof v!=='string'||v.length>max) fail(`${n}: недопустимый текст.`);};
@@ -27,7 +26,7 @@ export function validateDocument(doc, publish = false, sectionOnly = false) {
   const ids=new Set(),cardIds=new Set();
   for(const col of c.cols){obj(col,'Коллекция');text(col.id,'ID коллекции',64);if(!/^[a-zA-Z0-9_-]+$/.test(col.id)||ids.has(col.id))fail('ID коллекций должны быть уникальными (латиница, цифры, _ и -).');ids.add(col.id);text(col.name,'Название коллекции',200);if(!col.name.trim())fail('Укажите название коллекции.');if(col.desc!==undefined)text(col.desc,'Описание',2000);if(col.cover)image(col.cover,'Обложка');bool(col.enabled,'Коллекция');settings(col.settings,col.name);}
   for(const card of c.cards){obj(card,'Карта');num(card.id,'ID карты',1,Number.MAX_SAFE_INTEGER,true);if(cardIds.has(card.id))fail('ID карт должны быть уникальны.');cardIds.add(card.id);if(!ids.has(card.col))fail('Карта ссылается на неизвестную коллекцию.');text(card.name,'Название карты',200);if(!card.name.trim())fail('Укажите название карты.');if(!['N','R','SR'].includes(card.r))fail('Неизвестная редкость карты.');image(card.img,'Изображение карты',!publish);num(card.weight,'Вес карты',0.001,1000000);bool(card.enabled,'Карта');if(card.frame!==undefined)frameImage(card.frame,'Рамка карты');if(card.frameEnabled!==undefined)bool(card.frameEnabled,'Рамка карты');if(card.photo!==undefined){obj(card.photo,'Положение фото');num(card.photo.zoom,'Масштаб фото',1,4);num(card.photo.x,'Положение фото X',-100,100);num(card.photo.y,'Положение фото Y',-100,100);}}
-  if(publish){if(!c.cols.some(x=>x.enabled)&&!sectionOnly)fail('Включите хотя бы одну коллекцию.');for(const col of c.cols.filter(x=>x.enabled)){const cards=c.cards.filter(x=>x.enabled&&x.col===col.id);if(!cards.some(x=>x.r==='N'))fail(`${col.name}: нужна хотя бы одна активная карта N.`);for(const [r,k] of [['R','r'],['SR','sr']])if(col.settings[k]>0&&!cards.some(x=>x.r===r))fail(`${col.name}: шанс ${r} задан, но активных карт ${r} нет.`);if(col.settings.banner&&!cards.some(x=>x.id===col.settings.banner&&x.r==='SR'))fail(`${col.name}: баннер должен ссылаться на активную SR-карту.`);}}
+  if(publish){if(!c.cols.some(x=>x.enabled))fail('Включите хотя бы одну коллекцию.');for(const col of c.cols.filter(x=>x.enabled)){const cards=c.cards.filter(x=>x.enabled&&x.col===col.id);if(!cards.some(x=>x.r==='N'))fail(`${col.name}: нужна хотя бы одна активная карта N.`);for(const [r,k] of [['R','r'],['SR','sr']])if(col.settings[k]>0&&!cards.some(x=>x.r===r))fail(`${col.name}: шанс ${r} задан, но активных карт ${r} нет.`);if(col.settings.banner&&!cards.some(x=>x.id===col.settings.banner&&x.r==='SR'))fail(`${col.name}: баннер должен ссылаться на активную SR-карту.`);}}
   obj(c.economy,'Экономика');for(const k of ['startingGems','startingFree','dailyFree'])num(c.economy[k],k,0,1000000,true);
   for(const k of ['shards','sellPrices']){obj(c.economy[k],k);for(const r of ['N','R','SR'])num(c.economy[k][r],`${k} ${r}`,0,1000000,true);}
   list(c.economy.moneyPrizes,'Денежные призы',100);if(!c.economy.moneyPrizes.length)fail('Добавьте денежный приз.');c.economy.moneyPrizes.forEach(x=>num(x,'Денежный приз',0,1000000,true));
@@ -64,15 +63,9 @@ export function validateDocument(doc, publish = false, sectionOnly = false) {
   for(const key of ['artwork','background','logo'])art(login[key],`Вход: ${key}`);
   for(const key of ['bodyFont','titleFont'])choice(login[key],DISPLAY_FONTS,`Вход: ${key}`);
   choice(login.layout,['split','centered'],'Макет экрана входа');bool(login.showStory,'Иллюстрация экрана входа');
-  if(doc.gallery.includeLegacy!==undefined)bool(doc.gallery.includeLegacy,'Исходный архив');
   list(doc.gallery.items,'Архив',10000);list(doc.gallery.deleted,'Скрытые файлы',20000);
   const urls=new Set();for(const item of doc.gallery.items){obj(item,'Файл');image(item.url,'Ссылка файла');if(urls.has(item.url))fail('В архиве есть повторяющиеся ссылки.');urls.add(item.url);if(!['image','gif','video'].includes(item.type))fail('Неизвестный тип файла.');text(item.name||'','Имя файла',300);}
   for(const url of doc.gallery.deleted)image(url,'Скрытая ссылка');
   const normalized=structuredClone(doc);normalizeFrameSettings(normalized.config);normalizeCardIds(normalized.config);
-  if(sectionOnly){if(doc.sections!==undefined)fail('Вложенные разделы недопустимы.');}
-  else{
-   if(doc.sections!==undefined){obj(doc.sections,'Разделы');for(const key of Object.keys(doc.sections))if(key!=='drugie')fail('Неизвестный раздел сайта.');}
-   normalized.sections={drugie:validateDocument(doc.sections?.drugie??emptySection(normalized),publish,true)};
-  }
   return normalized;
 }

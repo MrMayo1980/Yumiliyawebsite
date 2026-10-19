@@ -73,15 +73,3 @@ test('publication rejects an ID previously retired from the card catalog',async(
  const {requests,fetcher}=fakeGithub({stateDocument:previous}),client=new GithubPublisher({owner:'MrMayo1980',repo:'Yumiliyawebsite'},fetcher);client.token='test-only';
  await assert.rejects(client.publish(next,0,[]),error=>error.status===422);assert.ok(!requests.some(request=>request.options.method==='POST'));
 });
-
-test('publishing one workspace ignores unfinished drafts in the other and preserves its live settings',async()=>{
- const {validateDocument}=await import('../validation.js');
- const current=validateDocument(document,true),draft=structuredClone(current);draft.appearance.site.name='Published main edit';
- draft.sections.drugie.config.cols=[{...structuredClone(config.cols[0]),enabled:true}];draft.sections.drugie.config.cards=[];
- const main=new GithubPublisher({owner:'MrMayo1980',repo:'Yumiliyawebsite'},fakeGithub({stateDocument:current}).fetcher);main.token='test-only';
- const result=await main.publish(draft,0,[],'main');assert.equal(result.published.appearance.site.name,'Published main edit');assert.deepEqual(result.published.sections,current.sections);
- const otherDraft=structuredClone(current);otherDraft.config.cards=[];otherDraft.sections.drugie.appearance.site.name='Published other edit';
- const other=new GithubPublisher({owner:'MrMayo1980',repo:'Yumiliyawebsite'},fakeGithub({stateDocument:current}).fetcher);other.token='test-only';
- const secondary=await other.publish(otherDraft,0,[],'drugie');assert.equal(secondary.published.sections.drugie.appearance.site.name,'Published other edit');assert.deepEqual(secondary.published.config,current.config);
- await assert.rejects(main.publish(draft,0,[],'unknown'),error=>error.status===422);
-});

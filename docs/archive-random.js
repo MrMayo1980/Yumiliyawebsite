@@ -1,4 +1,4 @@
-import {mediaType,safeMediaUrl} from './gallery.js?v=drugie-1';
+import {mediaType,safeMediaUrl} from './gallery.js';
 
 export function randomPool(items,filter='all',respectFilter=false){
  return items.filter(item=>safeMediaUrl(item.url)&&(!respectFilter||filter==='all'||mediaType(item)===filter));

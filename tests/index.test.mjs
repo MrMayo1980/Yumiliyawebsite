@@ -1,4 +1,3 @@
-import {workspaceFromSearch,projectDocument} from '../sections.js';
 import {createArchiveRoulette,randomPool} from '../archive-random.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -13,7 +12,7 @@ test('opening gacha skips archive requests; switching to archives loads once, in
  const document={hidden:false,body:node(),documentElement:node(),getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);},querySelector(){return node();},querySelectorAll(){return [];},addEventListener(){}};
  nodes.set('gacha-frame',node());nodes.get('gacha-frame').dataset.src='gacha_game.html?v=test';
  const location=new URL('http://localhost/index.html#gacha');
- const context=vm.createContext({workspaceFromSearch,projectDocument,document,location,URLSearchParams,structuredClone,console,createArchiveRoulette:()=>({update(){},cancel(){}}),randomPool,DEFAULT_APPEARANCE,mergeGallery,mediaType,createVideoLoader,safeMediaUrl:url=>url,isPages:()=>false,loadAppearance:async()=>structuredClone(DEFAULT_APPEARANCE),applySiteAppearance(){},loadLegacyGallery:async()=>{legacyRequests++;return [];},fetch:async()=>{overlayRequests++;return {ok:true,json:async()=>({items:[],deleted:[]})};},ResizeObserver:class{observe(){}},window:{addEventListener:(name,fn)=>events.set(name,fn)}});
+ const context=vm.createContext({document,location,URLSearchParams,structuredClone,console,createArchiveRoulette:()=>({update(){},cancel(){}}),randomPool,DEFAULT_APPEARANCE,mergeGallery,mediaType,createVideoLoader,safeMediaUrl:url=>url,isPages:()=>false,loadAppearance:async()=>structuredClone(DEFAULT_APPEARANCE),applySiteAppearance(){},loadLegacyGallery:async()=>{legacyRequests++;return [];},fetch:async()=>{overlayRequests++;return {ok:true,json:async()=>({items:[],deleted:[]})};},ResizeObserver:class{observe(){}},window:{addEventListener:(name,fn)=>events.set(name,fn)}});
  await vm.runInContext('(async()=>{'+source.replace(/^import[^\n]*\n/gm,'')+'})()',context);
  assert.equal(legacyRequests,0);assert.equal(overlayRequests,0);assert.equal(document.body.dataset.section,'gacha');assert.equal(nodes.get('gacha-frame').src,'gacha_game.html?v=test');
  location.hash='#archives';events.get('hashchange')();events.get('hashchange')();await new Promise(setImmediate);

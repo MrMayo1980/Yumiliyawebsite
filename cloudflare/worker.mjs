@@ -91,7 +91,7 @@ export function createWorker({fetcher=(...args)=>fetch(...args)}={}){
     await env.DB.prepare('INSERT INTO uploads(session,path,sha,expires) VALUES(?,?,?,?) ON CONFLICT(session,path) DO UPDATE SET sha=excluded.sha,expires=excluded.expires').bind(key,path,result.sha,Date.now()+SESSION_MS).run();return respond({sha:result.sha});
    }
    if(url.pathname==='/api/publish'&&request.method==='POST'){
-    const body=await jsonBody(request);if(body.workspace!==undefined&&!['main','drugie'].includes(body.workspace))throw fail('Выберите раздел для публикации.',422);const document=validateDocument(body.document,!body.workspace);
+    const body=await jsonBody(request),document=validateDocument(body.document,true);
     if(!Number.isSafeInteger(body.revision)||body.revision<0||!Array.isArray(body.files)||body.files.length>300)throw fail('Некорректные данные публикации.',422);
     const referenced=new Set();const collect=v=>{if(typeof v==='string')referenced.add(v);else if(Array.isArray(v))v.forEach(collect);else if(v&&typeof v==='object')Object.values(v).forEach(collect);};collect(document);
     const storedFiles=new Map((await env.DB.prepare('SELECT path,sha FROM uploads WHERE session=? AND expires>?').bind(key,Date.now()).all()).results.map(file=>[file.path,file.sha]));
@@ -100,7 +100,7 @@ export function createWorker({fetcher=(...args)=>fetch(...args)}={}){
      const stored=storedFiles.get(file.path);
      if(!stored||stored!==file.sha)throw fail('Сначала загрузите файл в текущем сеансе.',422);files.push({path:file.path,sha:stored});
     }
-    return respond(await client.publish(document,body.revision,files,body.workspace));
+    return respond(await client.publish(document,body.revision,files));
    }
    throw fail('Маршрут не найден.',404);
   }catch(error){return respond({error:error.status?error.message:'Сервис временно недоступен. Повторите позже.'},error.status||503);}

@@ -1,10 +1,8 @@
-import {workspaceFromSearch,projectDocument} from './sections.js?v=publish-fix-1';
 import {createArchiveRoulette,randomPool} from './archive-random.js?v=archive-random-1';
 import {isPages,loadPublished,loadPreview,providePreview} from './hosting.js';
-import {loadLegacyGallery,mergeGallery,mediaType,safeMediaUrl,createVideoLoader} from './gallery.js?v=publish-fix-1';
-import {DEFAULT_APPEARANCE,loadAppearance,applySiteAppearance} from './appearance.js?v=publish-fix-1';
-const preview=new URLSearchParams(location.search).has('preview'),workspace=workspaceFromSearch(location.search);
-const sectionSuffix=workspace==='drugie'?'section=drugie':'';
+import {loadLegacyGallery,mergeGallery,mediaType,safeMediaUrl,createVideoLoader} from './gallery.js?v=performance-1';
+import {DEFAULT_APPEARANCE,loadAppearance,applySiteAppearance} from './appearance.js?v=archive-random-1';
+const preview=new URLSearchParams(location.search).has('preview');
 let site=structuredClone(DEFAULT_APPEARANCE.site);
 
 let allItems = [];
@@ -28,7 +26,7 @@ async function loadMedia() {
   document.getElementById('gallery-error').hidden=true;
   const results=await Promise.allSettled([
     loadLegacyGallery(),
-    isPages()?(preview?Promise.resolve(projectDocument(previewDocument,workspace).gallery):loadPublished().then(state=>projectDocument(state.published,workspace).gallery)):fetch((preview?'api/admin/gallery':'api/gallery')+(sectionSuffix?'?'+sectionSuffix:''),{cache:'no-store'}).then(r=>r.ok?r.json():{items:[],deleted:[]}).catch(()=>({items:[],deleted:[]}))
+    isPages()?(preview?Promise.resolve(previewDocument.gallery):loadPublished().then(state=>state.published.gallery)):fetch(preview?'api/admin/gallery':'api/gallery',{cache:'no-store'}).then(r=>r.ok?r.json():{items:[],deleted:[]}).catch(()=>({items:[],deleted:[]}))
   ]);
   const legacy=results[0].status==='fulfilled'?results[0].value:[];
   const overlay=results[1].status==='fulfilled'?results[1].value:{items:[],deleted:[]};
@@ -111,7 +109,7 @@ function showSection() {
   if (section === 'gacha') {
     roulette.cancel();closeLB();
     const frame = document.getElementById('gacha-frame');
-    if (!frame.hasAttribute('src')) frame.src = frame.dataset.src+([sectionSuffix,preview?'preview=1':''].filter(Boolean).length?(frame.dataset.src.includes('?')?'&':'?')+[sectionSuffix,preview?'preview=1':''].filter(Boolean).join('&'):'');
+    if (!frame.hasAttribute('src')) frame.src = frame.dataset.src+(preview?(frame.dataset.src.includes('?')?'&':'?')+'preview=1':'');
     else if(!preview)frame.contentWindow?.postMessage({type:'yumiliya-refresh-game'},location.origin);
   }
   if(section==='archives'&&!galleryLoaded)fetchMedia();
@@ -129,10 +127,8 @@ window.addEventListener('hashchange', showSection);
 async function initialize(){
   try{site={...DEFAULT_APPEARANCE.site,...(await loadAppearance(preview)).site};}catch(error){console.error(error);}
   applySiteAppearance(site);roulette.update();
-  for(const name of ['main','drugie']){const link=document.getElementById(name+'-workspace-link');if(name===workspace)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');}
-  const admin=document.getElementById('admin-link');admin.href='admin.html'+(sectionSuffix?'?'+sectionSuffix:'');
-  const frame=document.getElementById('gacha-frame');frame.title='Карточная гача — '+site.name;
-  if(preview){admin.href='admin.html?login-preview=1'+(sectionSuffix?'&'+sectionSuffix:'');admin.target='_blank';admin.rel='noopener';}
+  const admin=document.getElementById('admin-link');
+  if(preview){admin.href='admin.html?login-preview=1';admin.target='_blank';admin.rel='noopener';}
   showSection();
 }
 await initialize();
