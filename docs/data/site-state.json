@@ -1,6 +1,6 @@
 {
-  "revision": 13,
-  "updatedAt": "2026-10-19T07:55:02.913Z",
+  "revision": 14,
+  "updatedAt": "2026-10-20T10:22:00.266Z",
   "published": {
     "config": {
       "cols": [
@@ -503,6 +503,70 @@
           "img": "assets/media/6f2d15c8-942a-49bf-9448-8018a2b819a4.jpg",
           "enabled": true,
           "weight": 1
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 0,
+            "y": 0
+          },
+          "frame": "",
+          "frameEnabled": true,
+          "id": 30,
+          "col": "Yumi",
+          "r": "N",
+          "name": "Юмилия N4",
+          "img": "assets/media/5eadedf3-f121-46f3-877c-f91b5f9ce216.jpg",
+          "enabled": true,
+          "weight": 2
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 0,
+            "y": 0
+          },
+          "frame": "",
+          "frameEnabled": true,
+          "id": 31,
+          "col": "Yumi",
+          "r": "N",
+          "name": "Юмилия N5",
+          "img": "assets/media/fad8bc20-f953-4ad2-9c5b-df68016e1ad1.jpg",
+          "enabled": true,
+          "weight": 2
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 7,
+            "y": 0
+          },
+          "frame": "",
+          "frameEnabled": true,
+          "id": 32,
+          "col": "Yumi",
+          "r": "R",
+          "name": "Юмилия R4",
+          "img": "assets/media/0ff18d06-2224-4d27-8e6c-a001d9b520a7.jpg",
+          "enabled": true,
+          "weight": 1
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 2,
+            "y": 1
+          },
+          "frame": "",
+          "frameEnabled": true,
+          "id": 33,
+          "col": "Yumi",
+          "r": "SR",
+          "name": "Юмилия SR5",
+          "img": "assets/media/c5f6cf4e-ddc7-46d6-929e-4838f30f5349.jpg",
+          "enabled": true,
+          "weight": 1
         }
       ],
       "back": "assets/gacha/67a69b8b0bd479bbe8c8.webp",
@@ -661,7 +725,7 @@
           "body": "Прогресс сохраняется в этом браузере. Кнопка 💾 позволяет скачать или скопировать резервную копию и восстановить её на другом устройстве."
         }
       ],
-      "nextCardId": 30
+      "nextCardId": 34
     },
     "appearance": {
       "site": {
