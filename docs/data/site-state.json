@@ -1,6 +1,6 @@
 {
-  "revision": 14,
-  "updatedAt": "2026-10-20T10:22:00.266Z",
+  "revision": 15,
+  "updatedAt": "2026-11-10T05:20:16.378Z",
   "published": {
     "config": {
       "cols": [
@@ -51,6 +51,24 @@
             "pityS": 100,
             "banner": 0,
             "bannerRate": 50,
+            "bannerGuarantee": true
+          }
+        },
+        {
+          "id": "LegendaryFox",
+          "name": "Sweety Fox",
+          "desc": "Коллекция карт Sweety Fox - легендарной порнозвезды и кумира Юмилии.",
+          "cover": "assets/media/07759b80-85d7-4c9e-84c1-4ddd1196a568.jpg",
+          "enabled": true,
+          "settings": {
+            "price": 170,
+            "sr": 2,
+            "r": 1,
+            "money": 25,
+            "pityR": 50,
+            "pityS": 100,
+            "banner": 0,
+            "bannerRate": 25,
             "bannerGuarantee": true
           }
         }
@@ -567,6 +585,118 @@
           "img": "assets/media/c5f6cf4e-ddc7-46d6-929e-4838f30f5349.jpg",
           "enabled": true,
           "weight": 1
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 0,
+            "y": 1
+          },
+          "frame": "",
+          "frameEnabled": true,
+          "id": 34,
+          "col": "LegendaryFox",
+          "r": "N",
+          "name": "Sweety Fox N1",
+          "img": "assets/media/5cc37fef-19dd-4d9a-8c17-fe8643509847.jpg",
+          "enabled": true,
+          "weight": 2
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 1,
+            "y": 1
+          },
+          "frame": "",
+          "frameEnabled": true,
+          "id": 35,
+          "col": "LegendaryFox",
+          "r": "N",
+          "name": "Sweety Fox N2",
+          "img": "assets/media/3f0f0ebc-bf72-4654-a59a-8eee4b302b23.jpg",
+          "enabled": true,
+          "weight": 2
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 0,
+            "y": 2
+          },
+          "frame": "",
+          "frameEnabled": true,
+          "id": 36,
+          "col": "LegendaryFox",
+          "r": "N",
+          "name": "Sweety Fox N3",
+          "img": "assets/media/7b2a5794-3c32-4131-a056-3f341a5f4cb4.jpg",
+          "enabled": true,
+          "weight": 2
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 3,
+            "y": 1
+          },
+          "frame": "",
+          "frameEnabled": true,
+          "id": 37,
+          "col": "LegendaryFox",
+          "r": "R",
+          "name": "Sweety Fox R1",
+          "img": "assets/media/5998fe8d-c5f5-4310-839f-842699850023.jpg",
+          "enabled": true,
+          "weight": 1
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 7,
+            "y": 1
+          },
+          "frame": "",
+          "frameEnabled": true,
+          "id": 38,
+          "col": "LegendaryFox",
+          "r": "R",
+          "name": "Sweety Fox R2",
+          "img": "assets/media/6c8e8b80-851e-4efe-b08c-0aeda3c7983f.jpg",
+          "enabled": true,
+          "weight": 1
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 5,
+            "y": 3
+          },
+          "frame": "",
+          "frameEnabled": true,
+          "id": 39,
+          "col": "LegendaryFox",
+          "r": "SR",
+          "name": "Sweety Fox SR1",
+          "img": "assets/media/8ef82596-fd5f-429a-bae4-a96b351d3a1a.jpg",
+          "enabled": true,
+          "weight": 1
+        },
+        {
+          "photo": {
+            "zoom": 1,
+            "x": 2,
+            "y": 2
+          },
+          "frame": "",
+          "frameEnabled": true,
+          "id": 40,
+          "col": "LegendaryFox",
+          "r": "SR",
+          "name": "Sweety Fox SR2",
+          "img": "assets/media/54f9a72f-6bf7-45e8-8778-4681a87e1073.jpg",
+          "enabled": true,
+          "weight": 1
         }
       ],
       "back": "assets/gacha/67a69b8b0bd479bbe8c8.webp",
@@ -725,7 +855,7 @@
           "body": "Прогресс сохраняется в этом браузере. Кнопка 💾 позволяет скачать или скопировать резервную копию и восстановить её на другом устройстве."
         }
       ],
-      "nextCardId": 34
+      "nextCardId": 41
     },
     "appearance": {
       "site": {
